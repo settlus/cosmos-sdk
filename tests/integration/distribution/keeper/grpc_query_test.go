@@ -89,7 +89,7 @@ func (suite *KeeperTestSuite) TestGRPCParams() {
 			"valid request",
 			func() {
 				params = types.Params{
-					CommunityTax:        sdk.NewDecWithPrec(3, 1),
+					CommunityTax:        sdk.NewDecWithPrec(2, 1),
 					BaseProposerReward:  sdk.ZeroDec(),
 					BonusProposerReward: sdk.ZeroDec(),
 					WithdrawAddrEnabled: true,

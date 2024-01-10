@@ -52,4 +52,5 @@ var (
 	ErrCommissionLTMinRate             = sdkerrors.Register(ModuleName, 40, "commission cannot be less than min rate")
 	ErrUnbondingNotFound               = sdkerrors.Register(ModuleName, 41, "unbonding operation not found")
 	ErrUnbondingOnHoldRefCountNegative = sdkerrors.Register(ModuleName, 42, "cannot un-hold unbonding operation that is not on hold")
+	ErrMaxStakingAmountReached         = sdkerrors.Register(ModuleName, 43, "cannot delegate more than max staking amount")
 )

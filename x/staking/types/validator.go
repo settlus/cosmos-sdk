@@ -60,6 +60,7 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		Commission:              NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
 		MinSelfDelegation:       math.OneInt(),
 		UnbondingOnHoldRefCount: 0,
+		Probono:                 false,
 	}, nil
 }
 
@@ -466,6 +467,7 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool        { return v.Jailed }
+func (v Validator) IsProbono() bool       { return v.Probono }
 func (v Validator) GetMoniker() string    { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {

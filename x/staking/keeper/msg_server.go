@@ -106,6 +106,7 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	}
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
+	validator.Probono = msg.IsProbono
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -181,6 +182,8 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 		validator.MinSelfDelegation = *msg.MinSelfDelegation
 	}
+	
+	validator.Probono = msg.Probono
 
 	k.SetValidator(ctx, validator)
 
