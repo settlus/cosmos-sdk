@@ -140,6 +140,10 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			break
 		}
 
+		if validator.GetTokens().LT(k.MinStakingAmount(ctx)) {
+			continue
+		}
+
 		// apply the appropriate state change if necessary
 		switch {
 		case validator.IsUnbonded():

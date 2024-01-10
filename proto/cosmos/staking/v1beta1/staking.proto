@@ -124,6 +124,8 @@ message Validator {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable)   = false
   ];
+  // probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
+  bool probono = 13;
 }
 
 // BondStatus is the status of a validator.
@@ -301,6 +303,18 @@ message Params {
   string min_commission_rate = 6 [
     (gogoproto.moretags)   = "yaml:\"min_commission_rate\"",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable)   = false
+  ];
+  // min_staking_amount is the minimum amount validators should stake while on PoSA stage
+  string min_staking_amount = 7 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable)   = false
+  ];
+  // max_staking_amount is the maximum amount validators can stake while on PoSA stage
+  string max_staking_amount = 8 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false
   ];
 }

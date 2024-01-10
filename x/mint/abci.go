@@ -3,6 +3,7 @@ package mint
 import (
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mint/keeper"
@@ -20,8 +21,19 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	// recalculate inflation rate
 	totalStakingSupply := k.StakingTokenSupply(ctx)
 	bondedRatio := k.BondedRatio(ctx)
-	minter.Inflation = ic(ctx, minter, params, bondedRatio)
-	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
+
+	// caluculate if block reward exists
+	if params.BlockReward.GT(math.ZeroInt()) {
+		if ctx.BlockHeight() == 0 {
+			minter.Inflation = sdk.NewDec(1)
+		} else {
+			minter.Inflation = sdk.NewDecFromInt(params.BlockReward).Quo(sdk.NewDecFromInt(params.BlockReward.Mul(math.NewInt(ctx.BlockHeight()))))
+		}
+		minter.AnnualProvisions = sdk.NewDecFromInt(params.BlockReward.Mul(math.NewInt(int64(params.BlocksPerYear))))
+	} else {
+		minter.Inflation = ic(ctx, minter, params, bondedRatio)
+		minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
+	}
 	k.SetMinter(ctx, minter)
 
 	// mint coins, update supply

@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -117,6 +118,150 @@ func TestAllocateTokensToManyValidators(t *testing.T) {
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(2325, 2)}}, app.DistrKeeper.GetValidatorCurrentRewards(ctx, valAddrs[0]).Rewards)
 	// proposer reward + staking.proportional for second proposer = (5 % + 0.5 * (93%)) * 100 = 51.5
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(515, 1)}}, app.DistrKeeper.GetValidatorCurrentRewards(ctx, valAddrs[1]).Rewards)
+}
+
+func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
+	app := simapp.Setup(t, false)
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+
+	// Settlus param settings
+	app.DistrKeeper.SetParams(ctx, disttypes.Params{
+		CommunityTax: sdk.NewDecWithPrec(2, 1),
+		BaseProposerReward: disttypes.DefaultParams().BaseProposerReward,
+		BonusProposerReward: disttypes.DefaultParams().BonusProposerReward,
+		WithdrawAddrEnabled: disttypes.DefaultParams().WithdrawAddrEnabled,
+	})
+
+	app.StakingKeeper.SetParams(ctx, stakingtypes.Params{
+		UnbondingTime: stakingtypes.DefaultUnbondingTime,
+		MaxValidators: 100,
+		MaxEntries:    7,
+		BondDenom:     sdk.DefaultBondDenom,
+		HistoricalEntries: stakingtypes.DefaultHistoricalEntries,
+		MinCommissionRate: stakingtypes.DefaultMinCommissionRate,
+		MinStakingAmount: math.NewInt(1000000000000000000), // 1 SETL
+		MaxStakingAmount: math.NewInt(1000000000000000000).MulRaw(1000), // 1000 SETL	
+	})
+
+	// reset fee pool
+	app.DistrKeeper.SetFeePool(ctx, disttypes.InitialFeePool())
+
+	addrs := simapp.AddTestAddrs(app, ctx, 3, sdk.NewInt(1234))
+	valAddrs := simapp.ConvertAddrsToValAddrs(addrs)
+	tstaking := teststaking.NewHelper(t, ctx, app.StakingKeeper)
+
+	// create validator with 50% commission
+	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDecWithPrec(5, 1), sdk.NewDecWithPrec(5, 1), sdk.NewDec(0))
+	tstaking.CreateValidator(valAddrs[0], valConsPk1, sdk.NewInt(100), true)
+
+	// create second validator with 0% commission
+	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
+	tstaking.CreateValidator(valAddrs[1], valConsPk2, sdk.NewInt(50), true)
+
+	// create third validator with 0% commission
+	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
+	tstaking.CreateProbonoValidator(valAddrs[2], valConsPk3, sdk.NewInt(70), true)
+
+	abciValA := abci.Validator{
+		Address: valConsPk1.Address(),
+		Power:   100,
+	}
+	abciValB := abci.Validator{
+		Address: valConsPk2.Address(),
+		Power:   50,
+	}
+	abciValC := abci.Validator{
+		Address: valConsPk3.Address(),
+		Power:   70,
+	}
+
+	// assert initial state: zero outstanding rewards, zero community pool, zero commission, zero current rewards
+	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[0]).Rewards.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[1]).Rewards.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[2]).Rewards.IsZero())
+	require.True(t, app.DistrKeeper.GetFeePool(ctx).CommunityPool.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[0]).Commission.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[1]).Commission.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[2]).Commission.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorCurrentRewards(ctx, valAddrs[0]).Rewards.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorCurrentRewards(ctx, valAddrs[1]).Rewards.IsZero())
+	require.True(t, app.DistrKeeper.GetValidatorCurrentRewards(ctx, valAddrs[2]).Rewards.IsZero())
+
+	// allocate tokens as if both had voted and second was proposer
+	fees := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(100)))
+	feeCollector := app.AccountKeeper.GetModuleAccount(ctx, types.FeeCollectorName)
+
+	// fee collector transfers rewards to distribution module, so the module will be the burner
+	distributionModule := app.AccountKeeper.GetModuleAccount(ctx, disttypes.ModuleName)
+	burnerStr, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), distributionModule.GetAddress())
+	require.NotNil(t, feeCollector)
+
+	// fund fee collector
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, feeCollector.GetName(), fees))
+
+	app.AccountKeeper.SetAccount(ctx, feeCollector)
+
+	votes := []abci.VoteInfo{
+		{
+			Validator:       abciValA,
+			SignedLastBlock: true,
+		},
+		{
+			Validator:       abciValB,
+			SignedLastBlock: true,
+		},
+		{
+			Validator:       abciValC,
+			SignedLastBlock: true,
+		},
+	}
+
+	maxValidators := sdk.NewInt(int64(app.StakingKeeper.GetParams(ctx).MaxValidators))
+	voteLength := sdk.NewInt(int64(len(votes)))
+	probonoValidatorLength := sdk.OneDec()
+	votesLengthInDec := sdk.NewDecFromInt(voteLength)
+
+	rewardPerValidator := sdk.NewDecCoinsFromCoins(fees...).QuoDec(sdk.NewDecFromInt(maxValidators))
+	contribution := rewardPerValidator.MulDecTruncate(app.DistrKeeper.GetCommunityTax(ctx))
+	rewardAfterContribution := rewardPerValidator.Sub(contribution)
+	contributionPerValidator := rewardPerValidator.Sub(rewardAfterContribution)
+
+	// Total reward in the block = 100, max validator set to 100
+	// power is useless here
+	app.DistrKeeper.AllocateTokens(ctx, 220, 220, valConsAddr2, votes)
+
+	require.Equal(t, rewardAfterContribution, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[0]).Rewards)
+	require.Equal(t, rewardAfterContribution, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[1]).Rewards)
+	require.Equal(t, sdk.DecCoins(nil), app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[2]).Rewards)
+
+	// burning event is the last event, so last index in event slice will be burn event
+	events := ctx.EventManager().ABCIEvents()
+	require.EqualValues(t, []abci.EventAttribute{
+		{
+			Key:   []byte("burner"),
+			Value: []byte(burnerStr),
+			Index: false,
+		},
+		{
+			Key:   []byte("amount"),
+			Value: []byte(sdk.NormalizeCoins(rewardPerValidator.MulDec(sdk.NewDecFromInt(maxValidators.Sub(voteLength)))).String()),
+			Index: false,
+		},
+	}, events[len(events)-1].Attributes)
+
+	// check max validator param, if max validator number is changed, below numbers also has to be changed
+	require.Equal(t, uint32(100), app.StakingKeeper.GetParams(ctx).MaxValidators)
+	// check community pool amount through variables
+	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...), app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	// given fee is 100, so reward per validator is 1
+	// so exact community pool contribution is 0.2(20% from val1) + 0.2(20% from val2) + 1(20% + rest 80% probono) = 1.4
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(14, 1)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	// 50% commission for first proposer, (0.8 * 50%) * 100 / 2 = 0.4
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(4, 1)}}, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[0]).Commission)
+	// zero commission for second proposer
+	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[1]).Commission.IsZero())
+	// zero commission for third proposer
+	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[2]).Commission.IsZero())
 }
 
 func TestAllocateTokensTruncation(t *testing.T) {

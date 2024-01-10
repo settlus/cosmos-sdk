@@ -145,6 +145,77 @@ func TestDelegation(t *testing.T) {
 	require.Equal(t, 0, len(resBonds))
 }
 
+func TestDelegateAboveMaxStakingAmount_Settlus(t *testing.T) {
+	_, app, ctx := createTestInput(t)
+
+	testAddrs := simapp.AddTestAddrsIncremental(app, ctx, 3, app.StakingKeeper.TokensFromConsensusPower(ctx, 10000))
+	addrVals := simapp.ConvertAddrsToValAddrs(testAddrs)
+	valTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 50)
+	delTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
+	valCoins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), valTokens))
+	delCoins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), delTokens))
+
+	// create a validator with a self-delegation
+	validator := teststaking.NewValidator(t, addrVals[0], PKs[0])
+
+	validator.MinSelfDelegation = delTokens
+	validator, issuedShares := validator.AddTokensFromDel(valTokens)
+	require.Equal(t, valTokens, issuedShares.RoundInt())
+
+	// add bonded tokens to pool for delegations
+	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), valCoins))
+	app.AccountKeeper.SetModuleAccount(ctx, notBondedPool)
+
+	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
+	app.StakingKeeper.SetValidatorByConsAddr(ctx, validator)
+	require.True(t, validator.IsBonded())
+
+	selfDelegation := types.NewDelegation(sdk.AccAddress(addrVals[0].Bytes()), addrVals[0], issuedShares)
+	app.StakingKeeper.SetDelegation(ctx, selfDelegation)
+
+	// add bonded tokens to pool for delegations
+	bondedPool := app.StakingKeeper.GetBondedPool(ctx)
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), valCoins))
+	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
+
+	// create a second delegation from user to this validator
+	app.StakingKeeper.DeleteValidatorByPowerIndex(ctx, validator)
+	validator, issuedShares = validator.AddTokensFromDel(delTokens)
+	require.True(t, validator.IsBonded())
+	require.Equal(t, delTokens, issuedShares.RoundInt())
+
+	// add bonded tokens to pool for delegations
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), delCoins))
+	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
+
+	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
+	delegation := types.NewDelegation(testAddrs[1], addrVals[0], issuedShares)
+	app.StakingKeeper.SetDelegation(ctx, delegation)
+
+	// add remaining delegation should not throw error
+	remainingDel, _ := app.StakingKeeper.GetRemainingDelegation(ctx, validator.GetOperator())
+	remainingDelCoin := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), remainingDel))
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), remainingDelCoin))
+	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
+	_, err := app.StakingKeeper.Delegate(ctx, testAddrs[1], remainingDel, types.Unbonded, validator, false)
+	require.NoError(t, err)
+
+	// try to delegate one more SETL than allowed should throw error, because we already reached max staking amount
+	_, err = app.StakingKeeper.Delegate(ctx, testAddrs[1], app.StakingKeeper.TokensFromConsensusPower(ctx, 1), types.Unbonded, validator, false)
+	require.Error(t, types.ErrMaxStakingAmountReached, err)
+
+	// end block
+	// one validator is updated, 'validator' is added to base simapp suite
+	applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 1)
+
+	validator, found := app.StakingKeeper.GetValidator(ctx, addrVals[0])
+	require.True(t, found)
+	require.Equal(t, app.StakingKeeper.TokensFromConsensusPower(ctx, 1000), validator.Tokens)
+	require.Equal(t, types.Bonded, validator.Status)
+	require.False(t, validator.Jailed)
+}
+
 // tests Get/Set/Remove UnbondingDelegation
 func TestUnbondingDelegation(t *testing.T) {
 	_, app, ctx := createTestInput(t)
@@ -215,7 +286,7 @@ func TestUnbondDelegation(t *testing.T) {
 	validator, issuedShares := validator.AddTokensFromDel(startTokens)
 	require.Equal(t, startTokens, issuedShares.RoundInt())
 
-	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
+	_ = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
 
 	delegation := types.NewDelegation(delAddrs[0], valAddrs[0], issuedShares)
 	app.StakingKeeper.SetDelegation(ctx, delegation)

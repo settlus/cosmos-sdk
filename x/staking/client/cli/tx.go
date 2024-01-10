@@ -28,6 +28,7 @@ var (
 	defaultCommissionMaxRate       = "0.2"
 	defaultCommissionMaxChangeRate = "0.01"
 	defaultMinSelfDelegation       = "1"
+	defaultProbono                 = false
 )
 
 // NewTxCmd returns a root CLI command handler for all x/staking transaction commands.
@@ -79,6 +80,7 @@ func NewCreateValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(flagSetDescriptionCreate())
 	cmd.Flags().AddFlagSet(FlagSetCommissionCreate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
+	cmd.Flags().AddFlagSet(FlagSetProbono())
 
 	cmd.Flags().String(FlagIP, "", fmt.Sprintf("The node's public IP. It takes effect only when used in combination with --%s", flags.FlagGenerateOnly))
 	cmd.Flags().String(FlagNodeID, "", "The node's ID")
@@ -134,7 +136,18 @@ func NewEditValidatorCmd() *cobra.Command {
 				newMinSelfDelegation = &msb
 			}
 
-			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation)
+			var newIsProbono bool
+
+			probonoString, _ := cmd.Flags().GetString(FlagProbono)
+			if probonoString != "" {
+				probono, err := strconv.ParseBool(probonoString)
+				if err != nil {
+					return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "wrong probono string")
+				}
+				newIsProbono = probono
+			}
+
+			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newIsProbono)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -143,6 +156,8 @@ func NewEditValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(flagSetDescriptionEdit())
 	cmd.Flags().AddFlagSet(flagSetCommissionUpdate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
+	cmd.Flags().AddFlagSet(FlagSetProbono())
+
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd
@@ -385,8 +400,11 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
+	probonoStr, _ := fs.GetString(FlagProbono)
+	isProbono, _ := strconv.ParseBool(probonoStr)
+
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation,
+		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, isProbono,
 	)
 	if err != nil {
 		return txf, nil, err
@@ -421,6 +439,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.String(FlagIdentity, "", "The (optional) identity signature (ex. UPort or Keybase)")
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
+	fsCreateValidator.AddFlagSet(FlagSetProbono())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
 
@@ -430,9 +449,10 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	commission max rate:         %s
 	commission max change rate:  %s
 	minimum self delegation:     %s
+	probono: %v
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
-		defaultMinSelfDelegation)
+		defaultMinSelfDelegation, defaultProbono)
 
 	return fsCreateValidator, defaultsDesc
 }
@@ -448,8 +468,8 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxRate       string
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
-
-	PubKey cryptotypes.PubKey
+	Probono                 bool
+	PubKey                  cryptotypes.PubKey
 
 	IP              string
 	Website         string
@@ -516,6 +536,11 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 	}
 
 	c.MinSelfDelegation, err = flagSet.GetString(FlagMinSelfDelegation)
+	if err != nil {
+		return c, err
+	}
+
+	c.Probono, err = flagSet.GetBool(FlagProbono)
 	if err != nil {
 		return c, err
 	}
@@ -587,8 +612,9 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 	}
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation,
+		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, config.Probono,
 	)
+
 	if err != nil {
 		return txBldr, msg, err
 	}

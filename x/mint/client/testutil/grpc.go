@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
+	
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/gogo/protobuf/proto"
@@ -29,7 +31,7 @@ func (s *IntegrationTestSuite) TestQueryGRPC() {
 			&minttypes.QueryParamsResponse{},
 			&minttypes.QueryParamsResponse{
 				Params: minttypes.NewParams("stake", sdk.NewDecWithPrec(13, 2), sdk.NewDecWithPrec(100, 2),
-					sdk.NewDec(1), sdk.NewDecWithPrec(67, 2), (60 * 60 * 8766 / 5)),
+					sdk.NewDec(1), sdk.NewDecWithPrec(67, 2), (60 * 60 * 8760 / 6), math.NewInt(5000000000000000000)),
 			},
 		},
 		{

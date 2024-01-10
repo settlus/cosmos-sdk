@@ -74,7 +74,7 @@ func TestSetValidator(t *testing.T) {
 	valAddr := sdk.ValAddress(valPubKey.Address().Bytes())
 	valTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
 
-	// test how the validator is set from a purely unbonbed pool
+	// test how the validator is set from a purely unbonded pool
 	validator := teststaking.NewValidator(t, valAddr, valPubKey)
 	validator, _ = validator.AddTokensFromDel(valTokens)
 	require.Equal(t, types.Unbonded, validator.Status)
@@ -115,6 +115,61 @@ func TestSetValidator(t *testing.T) {
 
 	allVals := app.StakingKeeper.GetAllValidators(ctx)
 	require.Equal(t, 2, len(allVals))
+}
+
+func TestUpdateValidator_Settlus(t *testing.T) {
+	app, ctx, addrs, _ := bootstrapValidatorTest(t, 1000, 20)
+	
+	// settlus settings
+	app.StakingKeeper.SetParams(ctx, types.Params{
+		BondDenom:         "stake",
+		MaxValidators:     100,
+		UnbondingTime:     1 * time.Second,
+		MaxEntries:        7,
+		HistoricalEntries: 10000,
+		MinStakingAmount:  sdk.NewInt(5000000000000000000),
+		MaxStakingAmount:  sdk.NewInt(1000000000000000000).Mul(sdk.NewInt(80)),
+		MinCommissionRate: sdk.ZeroDec(),
+	})
+
+	powers := []int64{50, 50}
+	var validators [2]types.Validator
+	for i, power := range powers {
+		validators[i] = teststaking.NewValidator(t, sdk.ValAddress(addrs[i]), PKs[i])
+		tokens := app.StakingKeeper.TokensFromConsensusPower(ctx, power)
+		validators[i], _ = validators[i].AddTokensFromDel(tokens)
+	}
+
+	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
+	validators[1] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[1], false)
+	applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 2)
+
+	// check initial power
+	require.Equal(t, int64(50), validators[0].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
+	require.Equal(t, int64(50), validators[1].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
+
+	// test multiple value change
+	//  tendermintUpdate set: {c1, c3} -> {c1', c3'}
+	delTokens1 := app.StakingKeeper.TokensFromConsensusPower(ctx, 49)
+	delTokens2 := app.StakingKeeper.TokensFromConsensusPower(ctx, 45)
+	validators[0], _ = validators[0].RemoveDelShares(sdk.NewDecFromInt(delTokens1))
+	validators[1], _ = validators[1].RemoveDelShares(sdk.NewDecFromInt(delTokens2))
+	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
+	validators[1] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[1], false)
+
+	// validator[0] is kicked from active validator set because it has less than MinStakingAmount
+	require.Equal(t, types.Unbonding, validators[0].GetStatus())
+	require.Equal(t, sdk.NewInt(1000000000000000000), validators[0].GetTokens())
+	require.Equal(t, int64(5), validators[1].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
+
+	// Tendermint updates should reflect power change
+	updates := applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 2)
+	require.Equal(t, validators[1].ABCIValidatorUpdate(app.StakingKeeper.PowerReduction(ctx)), updates[0])
+
+	// validator[0] is return to active validator set
+	validators[0], _ = validators[0].AddTokensFromDel(delTokens1)
+	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
+	require.Equal(t, types.Bonded, validators[0].GetStatus())
 }
 
 func TestUpdateValidatorByPowerIndex(t *testing.T) {
