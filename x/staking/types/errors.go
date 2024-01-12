@@ -51,4 +51,5 @@ var (
 	ErrEmptyValidatorPubKey            = sdkerrors.Register(ModuleName, 39, "empty validator public key")
 	ErrCommissionLTMinRate             = sdkerrors.Register(ModuleName, 40, "commission cannot be less than min rate")
 	ErrMaxStakingAmountReached         = sdkerrors.Register(ModuleName, 41, "cannot delegate more than max staking amount")
+	ErrMaxDelegationBelowMinimum       = sdkerrors.Register(ModuleName, 42, "max delegation cannot be less than minimum delegation")
 )

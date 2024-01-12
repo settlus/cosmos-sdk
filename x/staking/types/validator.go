@@ -48,18 +48,19 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 	}
 
 	return Validator{
-		OperatorAddress:          operator.String(),
-		ConsensusPubkey:          pkAny,
-		Jailed:                   false,
-		Status:                   Unbonded,
-		Tokens:                   sdk.ZeroInt(),
-		DelegatorShares:          sdk.ZeroDec(),
-		Description:              description,
-		UnbondingHeight:          int64(0),
-		UnbondingTime:            time.Unix(0, 0).UTC(),
-		Commission:               NewCommission(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
-		MinSelfDelegation:        sdk.OneInt(),
-		Probono:                  false,
+		OperatorAddress:   operator.String(),
+		ConsensusPubkey:   pkAny,
+		Jailed:            false,
+		Status:            Unbonded,
+		Tokens:            sdk.ZeroInt(),
+		DelegatorShares:   sdk.ZeroDec(),
+		Description:       description,
+		UnbondingHeight:   int64(0),
+		UnbondingTime:     time.Unix(0, 0).UTC(),
+		Commission:        NewCommission(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
+		MinSelfDelegation: sdk.OneInt(),
+		MaxDelegation:     sdk.ZeroInt(),
+		Probono:           false,
 	}, nil
 }
 
@@ -455,6 +456,8 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Commission.Equal(other.Commission) &&
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
+		v.MaxDelegation.Equal(other.MaxDelegation) &&
+		v.Probono == other.Probono &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 
@@ -520,9 +523,10 @@ func (v Validator) GetBondedTokens() math.Int { return v.BondedTokens() }
 func (v Validator) GetConsensusPower(r math.Int) int64 {
 	return v.ConsensusPower(r)
 }
-func (v Validator) GetCommission() sdk.Dec               { return v.Commission.Rate }
-func (v Validator) GetMinSelfDelegation() math.Int       { return v.MinSelfDelegation }
-func (v Validator) GetDelegatorShares() sdk.Dec          { return v.DelegatorShares }
+func (v Validator) GetCommission() sdk.Dec         { return v.Commission.Rate }
+func (v Validator) GetMinSelfDelegation() math.Int { return v.MinSelfDelegation }
+func (v Validator) GetMaxDelegation() math.Int     { return v.MaxDelegation }
+func (v Validator) GetDelegatorShares() sdk.Dec    { return v.DelegatorShares }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (v Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {

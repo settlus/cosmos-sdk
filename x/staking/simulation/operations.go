@@ -158,7 +158,7 @@ func SimulateMsgCreateValidator(ak types.AccountKeeper, bk types.BankKeeper, k k
 			simtypes.RandomDecAmount(r, maxCommission),
 		)
 
-		msg, err := types.NewMsgCreateValidator(address, simAccount.ConsKey.PubKey(), selfDelegation, description, commission, sdk.OneInt(), false)
+		msg, err := types.NewMsgCreateValidator(address, simAccount.ConsKey.PubKey(), selfDelegation, description, commission, sdk.OneInt(), sdk.ZeroInt(), false)
 
 		txCtx := simulation.OperationInput{
 			R:             r,
@@ -216,7 +216,7 @@ func SimulateMsgEditValidator(ak types.AccountKeeper, bk types.BankKeeper, k kee
 			simtypes.RandStringOfLength(r, 10),
 		)
 
-		msg := types.NewMsgEditValidator(address, description, &newCommissionRate, nil, false)
+		msg := types.NewMsgEditValidator(address, description, &newCommissionRate, nil, nil, false)
 
 		txCtx := simulation.OperationInput{
 			R:               r,

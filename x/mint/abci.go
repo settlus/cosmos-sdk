@@ -24,12 +24,12 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 
 	// caluculate if block reward exists
 	if params.BlockReward.GT(math.ZeroInt()) {
-		if ctx.BlockHeight() == 0 {
+		minter.AnnualProvisions = sdk.NewDecFromInt(params.BlockReward.MulRaw(int64(params.BlocksPerYear)))
+		if ctx.BlockHeight() < int64(params.BlocksPerYear) {
 			minter.Inflation = sdk.NewDec(1)
 		} else {
-			minter.Inflation = sdk.NewDecFromInt(params.BlockReward).Quo(sdk.NewDecFromInt(params.BlockReward.Mul(math.NewInt(ctx.BlockHeight()))))
+			minter.Inflation = minter.AnnualProvisions.QuoInt(totalStakingSupply)
 		}
-		minter.AnnualProvisions = sdk.NewDecFromInt(params.BlockReward.Mul(math.NewInt(int64(params.BlocksPerYear))))
 	} else {
 		minter.Inflation = ic(ctx, minter, params, bondedRatio)
 		minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)

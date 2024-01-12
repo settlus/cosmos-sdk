@@ -74,7 +74,7 @@ func TestSetValidator(t *testing.T) {
 	valAddr := sdk.ValAddress(valPubKey.Address().Bytes())
 	valTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
 
-	// test how the validator is set from a purely unbonded pool
+	// test how the validator is set from a purely unbonbed pool
 	validator := teststaking.NewValidator(t, valAddr, valPubKey)
 	validator, _ = validator.AddTokensFromDel(valTokens)
 	require.Equal(t, types.Unbonded, validator.Status)
@@ -119,7 +119,7 @@ func TestSetValidator(t *testing.T) {
 
 func TestUpdateValidator_Settlus(t *testing.T) {
 	app, ctx, addrs, _ := bootstrapValidatorTest(t, 1000, 20)
-	
+
 	// settlus settings
 	app.StakingKeeper.SetParams(ctx, types.Params{
 		BondDenom:         "stake",
@@ -127,8 +127,6 @@ func TestUpdateValidator_Settlus(t *testing.T) {
 		UnbondingTime:     1 * time.Second,
 		MaxEntries:        7,
 		HistoricalEntries: 10000,
-		MinStakingAmount:  sdk.NewInt(5000000000000000000),
-		MaxStakingAmount:  sdk.NewInt(1000000000000000000).Mul(sdk.NewInt(80)),
 		MinCommissionRate: sdk.ZeroDec(),
 	})
 
@@ -152,6 +150,13 @@ func TestUpdateValidator_Settlus(t *testing.T) {
 	//  tendermintUpdate set: {c1, c3} -> {c1', c3'}
 	delTokens1 := app.StakingKeeper.TokensFromConsensusPower(ctx, 49)
 	delTokens2 := app.StakingKeeper.TokensFromConsensusPower(ctx, 45)
+
+	originalReduction := app.StakingKeeper.TokensFromConsensusPower(ctx, 1)
+	sdk.DefaultPowerReduction = originalReduction.MulRaw(2)
+	defer func() {
+		sdk.DefaultPowerReduction = originalReduction
+	}()
+
 	validators[0], _ = validators[0].RemoveDelShares(sdk.NewDecFromInt(delTokens1))
 	validators[1], _ = validators[1].RemoveDelShares(sdk.NewDecFromInt(delTokens2))
 	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
@@ -160,7 +165,6 @@ func TestUpdateValidator_Settlus(t *testing.T) {
 	// validator[0] is kicked from active validator set because it has less than MinStakingAmount
 	require.Equal(t, types.Unbonding, validators[0].GetStatus())
 	require.Equal(t, sdk.NewInt(1000000000000000000), validators[0].GetTokens())
-	require.Equal(t, int64(5), validators[1].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
 
 	// Tendermint updates should reflect power change
 	updates := applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 2)

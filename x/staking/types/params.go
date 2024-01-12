@@ -43,8 +43,6 @@ var (
 	KeyBondDenom         = []byte("BondDenom")
 	KeyHistoricalEntries = []byte("HistoricalEntries")
 	KeyMinCommissionRate = []byte("MinCommissionRate")
-	KeyMinStakingAmount  = []byte("MinStakingAmount")
-	KeyMaxStakingAmount  = []byte("MaxStakingAmount")
 )
 
 var _ paramtypes.ParamSet = (*Params)(nil)
@@ -55,7 +53,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(unbondingTime time.Duration, maxValidators, maxEntries, historicalEntries uint32, bondDenom string, minCommissionRate sdk.Dec, minStakingAmount, maxStakingAmount math.Int) Params {
+func NewParams(unbondingTime time.Duration, maxValidators, maxEntries, historicalEntries uint32, bondDenom string, minCommissionRate sdk.Dec) Params {
 	return Params{
 		UnbondingTime:     unbondingTime,
 		MaxValidators:     maxValidators,
@@ -63,8 +61,6 @@ func NewParams(unbondingTime time.Duration, maxValidators, maxEntries, historica
 		HistoricalEntries: historicalEntries,
 		BondDenom:         bondDenom,
 		MinCommissionRate: minCommissionRate,
-		MinStakingAmount:  minStakingAmount,
-		MaxStakingAmount:  maxStakingAmount,
 	}
 }
 
@@ -74,8 +70,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyUnbondingTime, &p.UnbondingTime, validateUnbondingTime),
 		paramtypes.NewParamSetPair(KeyMaxValidators, &p.MaxValidators, validateMaxValidators),
 		paramtypes.NewParamSetPair(KeyMaxEntries, &p.MaxEntries, validateMaxEntries),
-		paramtypes.NewParamSetPair(KeyMinStakingAmount, &p.MinStakingAmount, validateMinStakingAmount),
-		paramtypes.NewParamSetPair(KeyMaxStakingAmount, &p.MaxStakingAmount, validateMaxStakingAmount),
 		paramtypes.NewParamSetPair(KeyHistoricalEntries, &p.HistoricalEntries, validateHistoricalEntries),
 		paramtypes.NewParamSetPair(KeyBondDenom, &p.BondDenom, validateBondDenom),
 		paramtypes.NewParamSetPair(KeyMinCommissionRate, &p.MinCommissionRate, validateMinCommissionRate),
@@ -91,8 +85,6 @@ func DefaultParams() Params {
 		DefaultHistoricalEntries,
 		sdk.DefaultBondDenom,
 		DefaultMinCommissionRate,
-		math.NewInt(0), // 0 SETL
-		math.NewInt(1000000000000000000).MulRaw(1000), // 1000 SETL	
 	)
 }
 
@@ -141,14 +133,6 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateMinCommissionRate(p.MinCommissionRate); err != nil {
-		return err
-	}
-
-	if err := validateMinStakingAmount(p.MinStakingAmount); err != nil {
-		return err
-	}
-
-	if err := validateMaxStakingAmount(p.MaxStakingAmount); err != nil {
 		return err
 	}
 
@@ -244,32 +228,6 @@ func validateMinCommissionRate(i interface{}) error {
 	}
 	if v.GT(sdk.OneDec()) {
 		return fmt.Errorf("minimum commission rate cannot be greater than 100%%: %s", v)
-	}
-
-	return nil
-}
-
-func validateMinStakingAmount(i interface{}) error {
-	v, ok := i.(math.Int)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("min staking amount must be positive: %d", v)
-	}
-
-	return nil
-}
-
-func validateMaxStakingAmount(i interface{}) error {
-	v, ok := i.(math.Int)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v == math.NewInt(0) {
-		return fmt.Errorf("max staking amount must be positive: %d", v)
 	}
 
 	return nil

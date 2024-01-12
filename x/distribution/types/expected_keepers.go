@@ -4,7 +4,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
@@ -51,10 +50,6 @@ type StakingKeeper interface {
 
 	GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation
 	GetParams(ctx sdk.Context) stakingtypes.Params
-}
-
-type MintKeeper interface {
-	GetParams(ctx sdk.Context) (params minttypes.Params)
 }
 
 // StakingHooks event hooks for staking validator object (noalias)
