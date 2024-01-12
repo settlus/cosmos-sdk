@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
-	
-	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
 	"github.com/gogo/protobuf/proto"
