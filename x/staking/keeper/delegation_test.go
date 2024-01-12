@@ -153,6 +153,7 @@ func TestDelegateAboveMaxStakingAmount_Settlus(t *testing.T) {
 	validator := teststaking.NewValidator(t, addrVals[0], PKs[0])
 
 	validator.MinSelfDelegation = delTokens
+	validator.MaxDelegation = app.StakingKeeper.TokensFromConsensusPower(ctx, 1000)
 	validator, issuedShares := validator.AddTokensFromDel(valTokens)
 	require.Equal(t, valTokens, issuedShares.RoundInt())
 
@@ -308,6 +309,7 @@ func (s *KeeperTestSuite) TestUndelegateSelfDelegationBelowMinSelfDelegation() {
 	validator := testutil.NewValidator(s.T(), addrVals[0], PKs[0])
 
 	validator.MinSelfDelegation = delTokens
+	validator.MaxDelegation = delTokens
 	validator, issuedShares := validator.AddTokensFromDel(delTokens)
 	require.Equal(delTokens, issuedShares.RoundInt())
 

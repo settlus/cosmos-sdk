@@ -14,6 +14,8 @@ const (
 	AttributeKeyValidator         = "validator"
 	AttributeKeyCommissionRate    = "commission_rate"
 	AttributeKeyMinSelfDelegation = "min_self_delegation"
+	AtrributeMaxDelegation        = "max_delegation"
+	AtrributeProbono              = "probono"
 	AttributeKeySrcValidator      = "source_validator"
 	AttributeKeyDstValidator      = "destination_validator"
 	AttributeKeyDelegator         = "delegator"

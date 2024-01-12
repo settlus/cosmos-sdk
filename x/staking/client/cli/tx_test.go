@@ -80,12 +80,11 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 	privKey := ed25519.GenPrivKey()
 	valPubKey := privKey.PubKey()
 	moniker := "DefaultMoniker"
-	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation string) cli.TxCreateValidatorConfig {
-		return cli.TxCreateValidatorConfig{
+	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation, maxDelegation string, Probono bool) TxCreateValidatorConfig {
+		return TxCreateValidatorConfig{
 			IP:                      ip,
 			ChainID:                 chainID,
 			NodeID:                  nodeID,
-			P2PPort:                 26656,
 			PubKey:                  valPubKey,
 			Moniker:                 moniker,
 			Amount:                  amount,
@@ -93,7 +92,8 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 			CommissionMaxRate:       commissionMax,
 			CommissionMaxChangeRate: commissionMaxChange,
 			MinSelfDelegation:       minSelfDelegation,
-			Probono:                  Probono,
+			MaxDelegation:           maxDelegation,
+			Probono:                 Probono,
 		}
 	}
 
@@ -112,7 +112,7 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagAmount, "2000stake")
 			},
-			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1", false),
+			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1", "0", false),
 		},
 		{
 			name: "Custom commission rate",
@@ -143,11 +143,18 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "0.33", false),
 		},
 		{
+			name: "Custom max deleagations",
+			fsModify: func(fs *pflag.FlagSet) {
+				fs.Set(FlagMaxDelegation, "1000")
+			},
+			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", "1000", false),
+		},
+		{
 			name: "Custom probono",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(FlagProbono, "true")
 			},
-			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", true),
+			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", "0", true),
 		},
 	}
 

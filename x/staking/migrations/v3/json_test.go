@@ -44,10 +44,8 @@ func TestMigrateJSON(t *testing.T) {
 		"bond_denom": "stake",
 		"historical_entries": 10000,
 		"max_entries": 7,
-		"max_staking_amount": "1000000000000000000000",
 		"max_validators": 100,
 		"min_commission_rate": "0.000000000000000000",
-		"min_staking_amount": "0",
 		"unbonding_time": "1814400s"
 	},
 	"redelegations": [],

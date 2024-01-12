@@ -71,6 +71,11 @@ message MsgCreateValidator {
   google.protobuf.Any      pubkey            = 6 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey"];
   cosmos.base.v1beta1.Coin value             = 7 [(gogoproto.nullable) = false];
   bool isProbono = 8;
+  string          max_delegation = 9 [
+    (cosmos_proto.scalar)  = "cosmos.Int",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.nullable)   = false
+  ];
 }
 
 // MsgCreateValidatorResponse defines the Msg/CreateValidator response type.
@@ -95,7 +100,9 @@ message MsgEditValidator {
       [(cosmos_proto.scalar) = "cosmos.Dec", (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec"];
   string min_self_delegation = 4
       [(cosmos_proto.scalar) = "cosmos.Int", (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"];
-  bool probono = 5;
+  string max_delegation = 5
+      [(cosmos_proto.scalar) = "cosmos.Int", (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int"];
+  bool probono = 6;
 }
 
 // MsgEditValidatorResponse defines the Msg/EditValidator response type.

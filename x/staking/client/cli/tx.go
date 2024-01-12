@@ -29,6 +29,7 @@ var (
 	defaultCommissionMaxRate       = "0.2"
 	defaultCommissionMaxChangeRate = "0.01"
 	defaultMinSelfDelegation       = "1"
+	defaultMaxDelegation           = "0"
 	defaultProbono                 = false
 )
 
@@ -84,6 +85,7 @@ func NewCreateValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(flagSetDescriptionCreate())
 	cmd.Flags().AddFlagSet(FlagSetCommissionCreate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
+	cmd.Flags().AddFlagSet(FlagSetMaxDelegation())
 	cmd.Flags().AddFlagSet(FlagSetProbono())
 
 	cmd.Flags().String(FlagIP, "", fmt.Sprintf("The node's public IP. It takes effect only when used in combination with --%s", flags.FlagGenerateOnly))
@@ -140,6 +142,18 @@ func NewEditValidatorCmd() *cobra.Command {
 				newMinSelfDelegation = &msb
 			}
 
+			var newMaxDelegation *math.Int
+
+			newMaxDelegationString, _ := cmd.Flags().GetString(FlagMaxDelegation)
+			if newMaxDelegationString != "" {
+				msb, ok := sdk.NewIntFromString(newMaxDelegationString)
+				if !ok {
+					return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
+				}
+
+				newMaxDelegation = &msb
+			}
+
 			var newIsProbono bool
 
 			probonoString, _ := cmd.Flags().GetString(FlagProbono)
@@ -151,7 +165,7 @@ func NewEditValidatorCmd() *cobra.Command {
 				newIsProbono = probono
 			}
 
-			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newIsProbono)
+			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newMaxDelegation, newIsProbono)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -404,11 +418,18 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
+	mdStr, _ := fs.GetString(FlagMaxDelegation)
+
+	maxDelegation, ok := sdk.NewIntFromString(mdStr)
+	if !ok {
+		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max self must be a positive integer or zero")
+	}
+
 	probonoStr, _ := fs.GetString(FlagProbono)
 	isProbono, _ := strconv.ParseBool(probonoStr)
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, isProbono,
+		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, isProbono,
 	)
 	if err != nil {
 		return txf, nil, err
@@ -445,6 +466,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.String(FlagIdentity, "", "The (optional) identity signature (ex. UPort or Keybase)")
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
+	fsCreateValidator.AddFlagSet(FlagSetMaxDelegation())
 	fsCreateValidator.AddFlagSet(FlagSetProbono())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
@@ -455,10 +477,11 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	commission max rate:         %s
 	commission max change rate:  %s
 	minimum self delegation:     %s
+	max delegation:              %s
 	probono: %v
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
-		defaultMinSelfDelegation, defaultProbono)
+		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbono)
 
 	return fsCreateValidator, defaultsDesc
 }
@@ -474,6 +497,7 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxRate       string
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
+	MaxDelegation           string
 	Probono                 bool
 	PubKey                  cryptotypes.PubKey
 
@@ -550,6 +574,11 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 	c.IP = ip
 	c.P2PPort = p2pPort
 	
+	c.MaxDelegation, err = flagSet.GetString(FlagMaxDelegation)
+	if err != nil {
+		return c, err
+	}
+
 	c.Probono, err = flagSet.GetBool(FlagProbono)
 	if err != nil {
 		return c, err
@@ -582,6 +611,10 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	if c.MinSelfDelegation == "" {
 		c.MinSelfDelegation = defaultMinSelfDelegation
+	}
+
+	if c.MaxDelegation == "" {
+		c.MaxDelegation = defaultMaxDelegation
 	}
 
 	return c, nil
@@ -621,7 +654,15 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
+	mdStr := config.MaxDelegation
+
+	maxDelegation, ok := sdk.NewIntFromString(mdStr)
+	if !ok {
+		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max self must be a positive integer or zero")
+	}
+
 	msg, err := types.NewMsgCreateValidator(
+<<<<<<< HEAD
 <<<<<<< HEAD
 		sdk.ValAddress(valAddr),
 		config.PubKey,
@@ -632,6 +673,9 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 =======
 		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, config.Probono,
 >>>>>>> fdaccb6fc (apply settlus tokenomics features)
+=======
+		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, config.Probono,
+>>>>>>> 06944b5d7 (refactor tokenomics logic)
 	)
 
 	if err != nil {

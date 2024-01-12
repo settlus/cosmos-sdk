@@ -106,6 +106,7 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	}
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
+	validator.MaxDelegation = msg.MaxDelegation
 	validator.Probono = msg.IsProbono
 
 	k.SetValidator(ctx, validator)
@@ -182,7 +183,14 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 		validator.MinSelfDelegation = *msg.MinSelfDelegation
 	}
-	
+
+	if msg.MaxDelegation != nil {
+		if !msg.MaxDelegation.LT(validator.Tokens) {
+			return nil, types.ErrMaxDelegationBelowMinimum
+		}
+
+		validator.MaxDelegation = *msg.MaxDelegation
+	}
 	validator.Probono = msg.Probono
 
 	k.SetValidator(ctx, validator)
@@ -192,6 +200,8 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			types.EventTypeEditValidator,
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
+			sdk.NewAttribute(types.AtrributeMaxDelegation, validator.MaxDelegation.String()),
+			sdk.NewAttribute(types.AtrributeProbono, strconv.FormatBool(validator.Probono)),
 		),
 	})
 
