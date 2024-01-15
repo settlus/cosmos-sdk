@@ -654,7 +654,6 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 	msg, err := types.NewMsgCreateValidator(
 		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, config.Probono,
 	)
-
 	if err != nil {
 		return txBldr, msg, err
 	}

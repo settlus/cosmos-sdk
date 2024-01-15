@@ -21,7 +21,7 @@ const (
 // DefaultPowerReduction is the default amount of staking tokens required for 1 unit of consensus-engine power
 var DefaultPowerReduction = NewIntFromUint64(1000000)
 
-// If ConstantReward is true, consensus-engine power is always 1 regardless of the amount of staking tokens
+// ConstantReward If true, consensus-engine power is always 1 regardless of the amount of staking tokens
 var ConstantReward = false
 
 // TokensToConsensusPower - convert input tokens to potential consensus-engine power

@@ -18,7 +18,7 @@ type DelegationI interface {
 // ValidatorI expected validator functions
 type ValidatorI interface {
 	IsJailed() bool                                          // whether the validator is jailed
-	IsProbono() bool										 // whether the validator is probono
+	IsProbono() bool                                         // whether the validator is probono
 	GetMoniker() string                                      // moniker of the validator
 	GetStatus() BondStatus                                   // status of the validator
 	IsBonded() bool                                          // check if has a bonded status
