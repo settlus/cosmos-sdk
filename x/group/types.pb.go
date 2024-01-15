@@ -298,7 +298,7 @@ func (m *MemberRequest) GetMetadata() string {
 
 // ThresholdDecisionPolicy is a decision policy where a proposal passes when it
 // satisfies the two following conditions:
-//  1. The sum of all `YES` voter's weights is greater or equal than the defined
+//  1. The sum of all `YES` voters' weights is greater or equal than the defined
 //     `threshold`.
 //  2. The voting and execution periods of the proposal respect the parameters
 //     given by `windows`.

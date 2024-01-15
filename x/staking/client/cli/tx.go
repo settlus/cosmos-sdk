@@ -677,7 +677,6 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, config.Probono,
 >>>>>>> 06944b5d7 (refactor tokenomics logic)
 	)
-
 	if err != nil {
 		return txBldr, msg, err
 	}
