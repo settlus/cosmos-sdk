@@ -422,7 +422,7 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 
 	maxDelegation, ok := sdk.NewIntFromString(mdStr)
 	if !ok {
-		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max self must be a positive integer or zero")
+		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
 	probonoStr, _ := fs.GetString(FlagProbono)
@@ -658,7 +658,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 
 	maxDelegation, ok := sdk.NewIntFromString(mdStr)
 	if !ok {
-		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max self must be a positive integer or zero")
+		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
 	msg, err := types.NewMsgCreateValidator(
