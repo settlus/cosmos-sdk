@@ -152,13 +152,9 @@ func NewEditValidatorCmd() *cobra.Command {
 
 			var newIsProbono bool
 
-			probonoString, _ := cmd.Flags().GetString(FlagProbono)
-			if probonoString != "" {
-				probono, err := strconv.ParseBool(probonoString)
-				if err != nil {
-					return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "wrong probono string")
-				}
-				newIsProbono = probono
+			newIsProbono, err = cmd.Flags().GetBool(FlagProbono)
+			if err != nil {
+				return err
 			}
 
 			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newMaxDelegation, newIsProbono)
@@ -421,11 +417,10 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
-	probonoStr, _ := fs.GetString(FlagProbono)
-	isProbono, _ := strconv.ParseBool(probonoStr)
+	probono, _ := fs.GetBool(FlagProbono)
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, isProbono,
+		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, probono,
 	)
 	if err != nil {
 		return txf, nil, err
