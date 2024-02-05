@@ -30,6 +30,7 @@ func createTestInput(t *testing.T) (*codec.LegacyAmino, *simapp.SimApp, sdk.Cont
 		app.GetKey(types.StoreKey),
 		app.AccountKeeper,
 		app.BankKeeper,
+		app.DistrKeeper,
 		app.GetSubspace(types.ModuleName),
 	)
 	return app.LegacyAmino(), app, ctx

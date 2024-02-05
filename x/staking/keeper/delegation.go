@@ -673,6 +673,10 @@ func (k Keeper) Delegate(
 		}
 
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
+		
+		if validator.IsProbono() {
+			k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
+		}
 		if err := k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, delegatorAddress, sendName, coins); err != nil {
 			return sdk.Dec{}, err
 		}
