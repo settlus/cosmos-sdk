@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 // GetDelegation returns a specific delegation.
@@ -674,7 +673,8 @@ func (k Keeper) Delegate(
 		}
 
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
-		
+
+		// if a validator is probono, get tokens from community pool
 		if validator.IsProbono() {
 			err := k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
 			if err != nil {
@@ -935,7 +935,7 @@ func (k Keeper) BeginRedelegation(
 	if !found {
 		return time.Time{}, types.ErrBadRedelegationDst
 	}
-	
+
 	delValAddr := sdk.ValAddress(delAddr)
 
 	if valSrcAddr.Equals(delValAddr) && srcValidator.IsProbono() {
