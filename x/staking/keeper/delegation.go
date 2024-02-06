@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 // GetDelegation returns a specific delegation.
@@ -887,6 +888,18 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 					ctx, types.NotBondedPoolName, delegatorAddress, sdk.NewCoins(amt),
 				); err != nil {
 					return nil, err
+				}
+
+				validator, ok := k.GetValidator(ctx, valAddr)
+				if !ok {
+					return nil, types.ErrNoValidatorFound
+				}
+
+				if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
+					err := k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(amt), delAddr)
+					if err != nil {
+						return nil, err
+					}
 				}
 
 				balances = balances.Add(amt)
