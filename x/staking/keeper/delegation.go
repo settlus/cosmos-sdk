@@ -675,7 +675,7 @@ func (k Keeper) Delegate(
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
 
 		// if a validator is probono, get tokens from community pool
-		if validator.IsProbono() {
+		if validator.IsProbono() && sdk.ValAddress(delegatorAddress).Equals(validator.GetOperator()) {
 			err := k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
 			if err != nil {
 				return sdk.Dec{}, err
@@ -894,7 +894,8 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 				if !ok {
 					return nil, types.ErrNoValidatorFound
 				}
-
+				
+				// send back the tokens to the community pool if the validator is probono
 				if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
 					err := k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(amt), delAddr)
 					if err != nil {
@@ -938,6 +939,7 @@ func (k Keeper) BeginRedelegation(
 
 	delValAddr := sdk.ValAddress(delAddr)
 
+	// probono validator is not allowed to redelegate since the amount is community reserve
 	if valSrcAddr.Equals(delValAddr) && srcValidator.IsProbono() {
 		return time.Time{}, types.ErrProbonoCannotRedelegate
 	}
