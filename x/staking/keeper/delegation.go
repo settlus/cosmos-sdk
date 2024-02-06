@@ -675,8 +675,12 @@ func (k Keeper) Delegate(
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
 		
 		if validator.IsProbono() {
-			k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
+			err := k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
+			if err != nil {
+				return sdk.Dec{}, err
+			}
 		}
+
 		if err := k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, delegatorAddress, sendName, coins); err != nil {
 			return sdk.Dec{}, err
 		}
@@ -917,6 +921,12 @@ func (k Keeper) BeginRedelegation(
 	srcValidator, found := k.GetValidator(ctx, valSrcAddr)
 	if !found {
 		return time.Time{}, types.ErrBadRedelegationDst
+	}
+	
+	delValAddr := sdk.ValAddress(delAddr)
+
+	if valSrcAddr.Equals(delValAddr) && srcValidator.IsProbono() {
+		return time.Time{}, types.ErrProbonoCannotRedelegate
 	}
 
 	// check if this is a transitive redelegation

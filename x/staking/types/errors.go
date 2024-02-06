@@ -52,4 +52,8 @@ var (
 	ErrCommissionLTMinRate             = sdkerrors.Register(ModuleName, 40, "commission cannot be less than min rate")
 	ErrMaxStakingAmountReached         = sdkerrors.Register(ModuleName, 41, "cannot delegate more than max staking amount")
 	ErrMaxDelegationBelowMinimum       = sdkerrors.Register(ModuleName, 42, "max delegation cannot be less than minimum delegation")
+	ErrProbonoCannotBeModified         = sdkerrors.Register(ModuleName, 43, "probono validator cannot be modified to non-probono")
+	ErrProbonoCannotBeDelegated        = sdkerrors.Register(ModuleName, 44, "probono validator cannot be delegated to")
+	ErrProbonoCannotUndelegate         = sdkerrors.Register(ModuleName, 45, "probono validator cannot undelegate")
+	ErrProbonoCannotRedelegate         = sdkerrors.Register(ModuleName, 46, "probono validator cannot redelegate")
 )

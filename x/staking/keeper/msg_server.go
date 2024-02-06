@@ -156,6 +156,12 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 		return nil, types.ErrNoValidatorFound
 	}
 
+	// probono validator cannot be self-modified to non-probono
+	// if want non-probono validator, they need to create a new one
+	if validator.IsProbono() && !msg.Probono {
+		return nil, types.ErrProbonoCannotBeModified
+	}
+
 	// replace all editable fields (clients should autofill existing values)
 	description, err := validator.Description.UpdateDescription(msg.Description)
 	if err != nil {
