@@ -164,6 +164,10 @@ var suggestedProposalTypes = []proposalType{
 		MsgType: "/cosmos.upgrade.v1beta1.MsgCancelUpgrade",
 	},
 	{
+		Name:    "create-validator-by-gov",
+		MsgType: "/cosmos.staking.v1beta1.MsgCreateValidatorByGov",
+	},
+	{
 		Name:    proposalOther,
 		MsgType: "", // user will input the message type
 	},

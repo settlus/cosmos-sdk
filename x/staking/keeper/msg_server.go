@@ -512,3 +512,78 @@ func (k msgServer) CancelUnbondingDelegation(goCtx context.Context, msg *types.M
 
 	return &types.MsgCancelUnbondingDelegationResponse{}, nil
 }
+
+func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	
+	// TODO: remove comment when ibc-go testing module is compatible
+	// if k.authority != req.Authority {
+	// 	return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.authority, req.Authority)
+	// }
+
+	amount, err := sdk.ParseCoinNormalized(req.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	minSelfDelegation, ok := sdk.NewIntFromString(req.MinSelfDelegation)
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
+	}
+
+	maxDelegation, ok := sdk.NewIntFromString(req.MaxDelegation)
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
+	}
+
+	pk, ok := req.Pubkey.GetCachedValue().(cryptotypes.PubKey)
+	if !ok {
+		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "Expecting cryptotypes.PubKey, got %T", pk)
+	}
+
+	commission := types.CommissionRates{
+		Rate:          sdk.NewDec(0),
+		MaxRate:       sdk.NewDec(0),
+		MaxChangeRate: sdk.NewDec(0),
+	}
+
+	validatorDescription := types.NewDescription(
+		req.Moniker,
+		"",
+		"",
+		"",
+		"",
+	)
+
+	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+	
+	valAddr := sdk.ValAddress(acc)
+
+	newMsg, err := types.NewMsgCreateValidator(
+		valAddr,
+		pk,
+		amount,
+		validatorDescription,
+		commission,
+		minSelfDelegation,
+		maxDelegation,
+		req.IsProbono,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = k.CreateValidator(ctx, newMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := k.Logger(ctx)
+	logger.Info("Created validator by proposal")
+
+	return &types.MsgCreateValidatorByGovResponse{}, nil
+}
