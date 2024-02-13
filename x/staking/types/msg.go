@@ -451,37 +451,34 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 		return ErrEmptyValidatorPubKey
 	}
 
-	amount, err := sdk.ParseCoinNormalized(msg.Amount)
-	if err != nil {
-		return err
-	}
-
-	if !amount.IsValid() || !amount.Amount.IsPositive() {
+	if !msg.Value.IsValid() || !msg.Value.Amount.IsPositive() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
 	}
 
-	minSelfDelegation, ok := sdk.NewIntFromString(msg.MinSelfDelegation)
-	if !ok {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid minimum self delegation")
+	if msg.Description == (Description{}) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty description")
 	}
 
-	if !minSelfDelegation.IsPositive() {
+	if msg.Commission == (CommissionRates{}) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty commission")
+	}
+
+	if err := msg.Commission.Validate(); err != nil {
+		return err
+	}
+
+	if !msg.MinSelfDelegation.IsPositive() {
 		return sdkerrors.Wrap(
 			sdkerrors.ErrInvalidRequest,
 			"minimum self delegation must be a positive integer",
 		)
 	}
 
-	if amount.Amount.LT(minSelfDelegation) {
+	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
 		return ErrSelfDelegationBelowMinimum
 	}
 
-	maxDelegation, ok := sdk.NewIntFromString(msg.MaxDelegation)
-	if !ok {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid max delegation")
-	}
-
-	if err := ValidateMaxDelegation(&maxDelegation); err != nil {
+	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
 		return err
 	}
 

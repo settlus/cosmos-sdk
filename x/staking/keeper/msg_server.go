@@ -11,10 +11,10 @@ import (
 	"github.com/armon/go-metrics"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -516,69 +516,36 @@ func (k msgServer) CancelUnbondingDelegation(goCtx context.Context, msg *types.M
 
 func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	
+
 	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
 	if k.GetAuthority() != req.Authority {
 		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
 	}
 
-	amount, err := sdk.ParseCoinNormalized(req.Amount)
-	if err != nil {
-		return nil, err
-	}
-
-	minSelfDelegation, ok := sdk.NewIntFromString(req.MinSelfDelegation)
-	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
-	}
-
-	maxDelegation, ok := sdk.NewIntFromString(req.MaxDelegation)
-	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
-	}
-
-	pk, ok := req.Pubkey.GetCachedValue().(cryptotypes.PubKey)
-	if !ok {
-		return nil, sdkerrors.Wrapf(sdkerrors.ErrInvalidType, "Expecting cryptotypes.PubKey, got %T", pk)
-	}
-
-	commission := types.CommissionRates{
-		Rate:          sdk.NewDec(0),
-		MaxRate:       sdk.NewDec(0),
-		MaxChangeRate: sdk.NewDec(0),
-	}
-
-	validatorDescription := types.NewDescription(
-		req.Moniker,
-		"",
-		"",
-		"",
-		"",
-	)
-
 	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	valAddr := sdk.ValAddress(acc)
 
-	newMsg, err := types.NewMsgCreateValidator(
-		valAddr,
-		pk,
-		amount,
-		validatorDescription,
-		commission,
-		minSelfDelegation,
-		maxDelegation,
-		req.IsProbono,
-	)
+	newMsg := types.MsgCreateValidator{
+		Description:       req.Description,
+		Commission:        req.Commission,
+		MinSelfDelegation: req.MinSelfDelegation,
+		DelegatorAddress:  req.DelegatorAddress,
+		ValidatorAddress:  valAddr.String(),
+		Pubkey:            req.Pubkey,
+		Value:             req.Value,
+		MaxDelegation:     req.MaxDelegation,
+		IsProbono:         req.IsProbono,
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = k.CreateValidator(ctx, newMsg)
+	_, err = k.CreateValidator(ctx, &newMsg)
 	if err != nil {
 		return nil, err
 	}
