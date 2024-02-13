@@ -18,6 +18,7 @@ const (
 	TypeMsgCreateValidator           = "create_validator"
 	TypeMsgDelegate                  = "delegate"
 	TypeMsgBeginRedelegate           = "begin_redelegate"
+	TypeMsgCreateValidatorByGov      = "create_validator_by_gov"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 	_ sdk.Msg                            = &MsgUndelegate{}
 	_ sdk.Msg                            = &MsgBeginRedelegate{}
 	_ sdk.Msg                            = &MsgCancelUnbondingDelegation{}
+	_ sdk.Msg                            = &MsgCreateValidatorByGov{}
 )
 
 // NewMsgCreateValidator creates a new MsgCreateValidator instance.
@@ -429,4 +431,61 @@ func ValidateMaxDelegation(maxDelegation *math.Int) error {
 	}
 
 	return nil
+}
+
+// Route implements the sdk.Msg interface.
+func (msg MsgCreateValidatorByGov) Route() string { return RouterKey }
+
+// Type implements the sdk.Msg interface.
+func (msg MsgCreateValidatorByGov) Type() string { return TypeMsgCreateValidatorByGov }
+
+// GetSigners implements the sdk.Msg interface.
+func (msg MsgCreateValidatorByGov) GetSigners() []sdk.AccAddress {
+	addr, _ := sdk.AccAddressFromBech32(msg.Authority)
+	return []sdk.AccAddress{addr}
+}
+
+// ValidateBasic implements the sdk.Msg interface.
+func (msg MsgCreateValidatorByGov) ValidateBasic() error {
+	if msg.Pubkey == nil {
+		return ErrEmptyValidatorPubKey
+	}
+
+	if !msg.Value.IsValid() || !msg.Value.Amount.IsPositive() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
+	}
+
+	if msg.Description == (Description{}) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty description")
+	}
+
+	if msg.Commission == (CommissionRates{}) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "empty commission")
+	}
+
+	if err := msg.Commission.Validate(); err != nil {
+		return err
+	}
+
+	if !msg.MinSelfDelegation.IsPositive() {
+		return sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest,
+			"minimum self delegation must be a positive integer",
+		)
+	}
+
+	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
+		return ErrSelfDelegationBelowMinimum
+	}
+
+	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (msg MsgCreateValidatorByGov) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	var pubKey cryptotypes.PubKey
+	return unpacker.UnpackAny(msg.Pubkey, &pubKey)
 }
