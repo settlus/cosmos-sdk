@@ -541,10 +541,6 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		IsProbono:         req.IsProbono,
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	_, err = k.CreateValidator(ctx, &newMsg)
 	if err != nil {
 		return nil, err
