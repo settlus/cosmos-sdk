@@ -504,3 +504,40 @@ func (ms msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdatePara
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
+func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
+	if k.GetAuthority() != req.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
+	}
+
+	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	valAddr := sdk.ValAddress(acc)
+
+	newMsg := types.MsgCreateValidator{
+		Description:       req.Description,
+		Commission:        req.Commission,
+		MinSelfDelegation: req.MinSelfDelegation,
+		DelegatorAddress:  req.DelegatorAddress,
+		ValidatorAddress:  valAddr.String(),
+		Pubkey:            req.Pubkey,
+		Value:             req.Value,
+		MaxDelegation:     req.MaxDelegation,
+		IsProbono:         req.IsProbono,
+	}
+
+	_, err = k.CreateValidator(ctx, &newMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := k.Logger(ctx)
+	logger.Info("Created validator by proposal")
+
+	return &types.MsgCreateValidatorByGovResponse{}, nil
+}

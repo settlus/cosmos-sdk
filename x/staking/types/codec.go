@@ -41,6 +41,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&MsgBeginRedelegate{},
 		&MsgCancelUnbondingDelegation{},
 		&MsgUpdateParams{},
+		&MsgCreateValidatorByGov{},
 	)
 	registry.RegisterImplementations(
 		(*authz.Authorization)(nil),
