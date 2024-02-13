@@ -398,7 +398,7 @@ func TestUnbondingDelegationsMaxEntries_Settlus(t *testing.T) {
 
 	bondDenom := app.StakingKeeper.BondDenom(ctx)
 	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
-	
+
 	// reset community pool
 	app.DistrKeeper.SetFeePool(ctx, disttypes.InitialFeePool())
 
@@ -880,7 +880,6 @@ func TestRedelegate_Settlus(t *testing.T) {
 	val1 := teststaking.NewValidator(t, addrVals[0], PKs[0])
 	val1, share1 := val1.AddTokensFromDel(val1Tokens)
 	require.Equal(t, val1Tokens, share1.RoundInt())
-
 
 	val2 := teststaking.NewValidator(t, addrVals[1], PKs[1])
 	val2, share2 := val2.AddTokensFromDel(val2Tokens)

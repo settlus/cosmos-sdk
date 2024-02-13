@@ -894,7 +894,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 				if !ok {
 					return nil, types.ErrNoValidatorFound
 				}
-				
+
 				// send back the tokens to the community pool if the validator is probono
 				if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
 					err := k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(amt), delAddr)
