@@ -10,6 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -61,6 +63,11 @@ func NewKeeper(
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+types.ModuleName)
+}
+
+// TODO: implement in keeper when version is updated
+func (k Keeper) GetAuthority() string {
+	return authtypes.NewModuleAddress(govtypes.ModuleName).String()
 }
 
 // Set the validator hooks

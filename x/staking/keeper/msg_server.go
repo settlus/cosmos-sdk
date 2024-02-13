@@ -11,6 +11,7 @@ import (
 	"github.com/armon/go-metrics"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -516,10 +517,10 @@ func (k msgServer) CancelUnbondingDelegation(goCtx context.Context, msg *types.M
 func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	
-	// TODO: remove comment when ibc-go testing module is compatible
-	// if k.authority != req.Authority {
-	// 	return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.authority, req.Authority)
-	// }
+	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
+	if k.GetAuthority() != req.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
+	}
 
 	amount, err := sdk.ParseCoinNormalized(req.Amount)
 	if err != nil {
