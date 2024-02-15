@@ -391,7 +391,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 func TestUnbondingDelegation_Settlus(t *testing.T) {
 	_, app, ctx := createSettlusTestInput(t)
 
-	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 1, sdk.NewInt(10000))
+	initBalance := sdk.NewInt(10000)
+	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 1, initBalance)
 	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)
 
 	startTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
@@ -439,8 +440,9 @@ func TestUnbondingDelegation_Settlus(t *testing.T) {
 	_, err := app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0])
 	require.NoError(t, err)
 
-	// check if community pool receives correct amount by complete unbonding
+	// check if community pool receives correct amount by complete unbonding, and validator receives nothing and balance remains the same in initialized state
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(unDelegateAmount)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, initBalance, app.BankKeeper.GetBalance(ctx, addrDels[0], bondDenom).Amount)
 }
 
 // // test undelegating self delegation from a validator pushing it below MinSelfDelegation

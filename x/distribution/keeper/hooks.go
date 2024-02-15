@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -23,7 +25,11 @@ func (h Hooks) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddre
 		if err != nil {
 			return err
 		}
+		h.k.Logger(ctx).Info(
+			fmt.Sprintf("BeforeDelegateCoinsToModule at block %d: delAddr: %s, valAddr: %s, coins: %s", ctx.BlockHeight(), delAddr.String(), valAddr, coins.String()),
+		)
 	}
+
 	return nil
 }
 
@@ -34,6 +40,9 @@ func (h Hooks) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAd
 		if err != nil {
 			return err
 		}
+		h.k.Logger(ctx).Info(
+			fmt.Sprintf("AfterUndelegateCoinsFromModule at block %d: delAddr: %s, valAddr: %s, coins: %s", ctx.BlockHeight(), delAddr.String(), valAddr, coin.String()),
+		)
 	}
 
 	return nil
