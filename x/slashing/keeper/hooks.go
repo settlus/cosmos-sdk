@@ -101,3 +101,11 @@ func (h Hooks) AfterDelegationModified(_ sdk.Context, _ sdk.AccAddress, _ sdk.Va
 func (h Hooks) BeforeValidatorSlashed(_ sdk.Context, _ sdk.ValAddress, _ sdk.Dec) error {
 	return nil
 }
+
+func (h Hooks) BeforeDelegateCoinsToModule(_ sdk.Context, _ sdk.AccAddress, _ sdk.ValAddress, _ sdk.Coins) error {
+	return nil
+}
+
+func (h Hooks) AfterUndelegateCoinsFromModule(_ sdk.Context, _ sdk.AccAddress, _ sdk.ValAddress, _ sdk.Coin) error {
+	return nil
+}

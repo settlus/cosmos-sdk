@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -30,9 +31,46 @@ func createTestInput(t *testing.T) (*codec.LegacyAmino, *simapp.SimApp, sdk.Cont
 		app.GetKey(types.StoreKey),
 		app.AccountKeeper,
 		app.BankKeeper,
-		app.DistrKeeper,
 		app.GetSubspace(types.ModuleName),
 	)
+
+	return app.LegacyAmino(), app, ctx
+}
+
+// createSettlusTestInput Returns a simapp with custom StakingKeeper which contains hooks
+func createSettlusTestInput(t *testing.T) (*codec.LegacyAmino, *simapp.SimApp, sdk.Context) {
+	app := simapp.Setup(t, false)
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
+
+	stakingKeeper := keeper.NewKeeper(
+		app.AppCodec(),
+		app.GetKey(types.StoreKey),
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.GetSubspace(types.ModuleName),
+	)
+
+	app.StakingKeeper = *stakingKeeper.SetHooks(
+		types.NewMultiStakingHooks(app.DistrKeeper.Hooks(), app.SlashingKeeper.Hooks()),
+	)
+
+	// Settlus param settings
+	app.DistrKeeper.SetParams(ctx, disttypes.Params{
+		CommunityTax:        sdk.NewDecWithPrec(2, 1),
+		BaseProposerReward:  sdk.ZeroDec(),
+		BonusProposerReward: sdk.ZeroDec(),
+		WithdrawAddrEnabled: disttypes.DefaultParams().WithdrawAddrEnabled,
+	})
+
+	app.StakingKeeper.SetParams(ctx, types.Params{
+		UnbondingTime:     types.DefaultUnbondingTime,
+		MaxValidators:     40,
+		MaxEntries:        7,
+		BondDenom:         sdk.DefaultBondDenom,
+		HistoricalEntries: types.DefaultHistoricalEntries,
+		MinCommissionRate: types.DefaultMinCommissionRate,
+	})
+
 	return app.LegacyAmino(), app, ctx
 }
 

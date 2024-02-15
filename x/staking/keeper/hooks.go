@@ -87,3 +87,18 @@ func (k Keeper) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, 
 	}
 	return nil
 }
+
+// BeforeDelegateCoinsToModule - call hook if registered
+func (k Keeper) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coins sdk.Coins) error {
+	if k.hooks != nil {
+		return k.hooks.BeforeDelegateCoinsToModule(ctx, delAddr, valAddr, coins)
+	}
+	return nil
+}
+
+func (k Keeper) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coin sdk.Coin) error {
+	if k.hooks != nil {
+		return k.hooks.AfterUndelegateCoinsFromModule(ctx, delAddr, valAddr, coin)
+	}
+	return nil
+}

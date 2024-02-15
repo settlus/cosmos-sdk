@@ -641,7 +641,7 @@ func (k Keeper) Delegate(
 
 	delegatorAddress := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
 
-	// we should check if the added delegation amount makes total bonded token exceeds max allowed delegation amount
+	// we should check if the added delegation amount makes total bonded token exceeds max delegation amount if it is set
 	if validator.MaxDelegation.IsPositive() {
 		remainingDel, err := k.GetRemainingDelegation(ctx, validator.GetOperator())
 		if err != nil {
@@ -675,11 +675,8 @@ func (k Keeper) Delegate(
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
 
 		// if a validator is probono, get tokens from community pool
-		if validator.IsProbono() && sdk.ValAddress(delegatorAddress).Equals(validator.GetOperator()) {
-			err := k.distributionKeeper.DistributeFromFeePool(ctx, coins, delegatorAddress)
-			if err != nil {
-				return sdk.Dec{}, err
-			}
+		if err := k.BeforeDelegateCoinsToModule(ctx, delAddr, validator.GetOperator(), coins); err != nil {
+			return sdk.Dec{}, err
 		}
 
 		if err := k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, delegatorAddress, sendName, coins); err != nil {
@@ -890,17 +887,9 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 					return nil, err
 				}
 
-				validator, ok := k.GetValidator(ctx, valAddr)
-				if !ok {
-					return nil, types.ErrNoValidatorFound
-				}
-
 				// send back the tokens to the community pool if the validator is probono
-				if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
-					err := k.distributionKeeper.FundCommunityPool(ctx, sdk.NewCoins(amt), delAddr)
-					if err != nil {
-						return nil, err
-					}
+				if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
+					return nil, err
 				}
 
 				balances = balances.Add(amt)

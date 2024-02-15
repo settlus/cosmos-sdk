@@ -203,7 +203,7 @@ func TestDelegateAboveMaxStakingAmount_Settlus(t *testing.T) {
 	_, err := app.StakingKeeper.Delegate(ctx, testAddrs[1], remainingDel, types.Unbonded, validator, false)
 	require.NoError(t, err)
 
-	// try to delegate one more SETL than allowed should throw error, because we already reached max staking amount
+	// try to delegate one more SETL than allowed should throw error, because we already reached Max Delegation
 	_, err = app.StakingKeeper.Delegate(ctx, testAddrs[1], app.StakingKeeper.TokensFromConsensusPower(ctx, 1), types.Unbonded, validator, false)
 	require.Error(t, types.ErrMaxStakingAmountReached, err)
 
@@ -388,8 +388,8 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 	require.True(sdk.IntEq(t, newNotBonded, oldNotBonded.AddRaw(1)))
 }
 
-func TestUnbondingDelegationsMaxEntries_Settlus(t *testing.T) {
-	_, app, ctx := createTestInput(t)
+func TestUnbondingDelegation_Settlus(t *testing.T) {
+	_, app, ctx := createSettlusTestInput(t)
 
 	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 1, sdk.NewInt(10000))
 	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)
@@ -419,23 +419,28 @@ func TestUnbondingDelegationsMaxEntries_Settlus(t *testing.T) {
 	delegation := types.NewDelegation(addrDels[0], addrVals[0], issuedShares)
 	app.StakingKeeper.SetDelegation(ctx, delegation)
 
-	maxEntries := app.StakingKeeper.MaxEntries(ctx)
+	unDelegateAmount := sdk.NewInt(7)
 
-	// should all pass
-	var completionTime time.Time
-	for i := uint32(0); i < maxEntries; i++ {
-		var err error
-		completionTime, err = app.StakingKeeper.Undelegate(ctx, addrDels[0], addrVals[0], sdk.NewDec(1))
-		require.NoError(t, err)
+	// Don't use undelegate, because it messes up with hooks in test input
+	// Instead set unbonding delegation directly
+	coins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), unDelegateAmount))
+	if err := app.BankKeeper.SendCoinsFromModuleToModule(ctx, types.BondedPoolName, types.NotBondedPoolName, coins); err != nil {
+		panic(err)
 	}
 
-	// mature unbonding delegations
+	completionTime := ctx.BlockHeader().Time.Add(app.StakingKeeper.UnbondingTime(ctx))
+
+	ubd := app.StakingKeeper.SetUnbondingDelegationEntry(ctx, addrDels[0], addrVals[0], ctx.BlockHeight(), completionTime, unDelegateAmount)
+	app.StakingKeeper.InsertUBDQueue(ctx, ubd, completionTime)
+
+	// // mature unbonding delegations
 	ctx = ctx.WithBlockTime(completionTime)
+
 	_, err := app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0])
 	require.NoError(t, err)
 
 	// check if community pool receives correct amount by complete unbonding
-	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDec(int64(maxEntries))}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(unDelegateAmount)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
 }
 
 // // test undelegating self delegation from a validator pushing it below MinSelfDelegation
@@ -861,7 +866,7 @@ func TestRedelegateToSameValidator(t *testing.T) {
 }
 
 func TestRedelegate_Settlus(t *testing.T) {
-	_, app, ctx := createTestInput(t)
+	_, app, ctx := createSettlusTestInput(t)
 
 	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 2, sdk.NewInt(0))
 	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)

@@ -17,24 +17,7 @@ import (
 )
 
 func TestCreateProbonoValidator_Settlus(t *testing.T) {
-	_, app, ctx := createTestInput(t)
-
-	// Settlus param settings
-	app.DistrKeeper.SetParams(ctx, disttypes.Params{
-		CommunityTax:        sdk.NewDecWithPrec(2, 1),
-		BaseProposerReward:  sdk.ZeroDec(),
-		BonusProposerReward: sdk.ZeroDec(),
-		WithdrawAddrEnabled: disttypes.DefaultParams().WithdrawAddrEnabled,
-	})
-
-	app.StakingKeeper.SetParams(ctx, types.Params{
-		UnbondingTime:     types.DefaultUnbondingTime,
-		MaxValidators:     40,
-		MaxEntries:        7,
-		BondDenom:         sdk.DefaultBondDenom,
-		HistoricalEntries: types.DefaultHistoricalEntries,
-		MinCommissionRate: types.DefaultMinCommissionRate,
-	})
+	_, app, ctx := createSettlusTestInput(t)
 
 	// reset fee pool
 	app.DistrKeeper.SetFeePool(ctx, disttypes.InitialFeePool())

@@ -16,6 +16,29 @@ var _ stakingtypes.StakingHooks = Hooks{}
 // Create new distribution hooks
 func (k Keeper) Hooks() Hooks { return Hooks{k} }
 
+func (h Hooks) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coins sdk.Coins) error {
+	validator := h.k.stakingKeeper.Validator(ctx, valAddr)
+	if validator.IsProbono() && sdk.ValAddress(delAddr).Equals(valAddr) {
+		err := h.k.DistributeFromFeePool(ctx, coins, delAddr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h Hooks) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coin sdk.Coin) error {
+	validator := h.k.stakingKeeper.Validator(ctx, valAddr)
+	if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
+		err := h.k.FundCommunityPool(ctx, sdk.NewCoins(coin), delAddr)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // initialize validator distribution record
 func (h Hooks) AfterValidatorCreated(ctx sdk.Context, valAddr sdk.ValAddress) error {
 	val := h.k.stakingKeeper.Validator(ctx, valAddr)
