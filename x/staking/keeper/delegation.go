@@ -641,7 +641,7 @@ func (k Keeper) Delegate(
 
 	delegatorAddress := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
 
-	// we should check if the added delegation amount makes total bonded token exceeds max allowed delegation amount
+	// we should check if the added delegation amount makes total bonded token exceeds max delegation amount if it is set
 	if validator.MaxDelegation.IsPositive() {
 		remainingDel, err := k.GetRemainingDelegation(ctx, validator.GetOperator())
 		if err != nil {
@@ -673,6 +673,12 @@ func (k Keeper) Delegate(
 		}
 
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
+
+		// if a validator is probono, get tokens from community pool
+		if err := k.BeforeDelegateCoinsToModule(ctx, delAddr, validator.GetOperator(), coins); err != nil {
+			return sdk.Dec{}, err
+		}
+
 		if err := k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, delegatorAddress, sendName, coins); err != nil {
 			return sdk.Dec{}, err
 		}
@@ -881,6 +887,11 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 					return nil, err
 				}
 
+				// send back the tokens to the community pool if the validator is probono
+				if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
+					return nil, err
+				}
+
 				balances = balances.Add(amt)
 			}
 		}
@@ -913,6 +924,13 @@ func (k Keeper) BeginRedelegation(
 	srcValidator, found := k.GetValidator(ctx, valSrcAddr)
 	if !found {
 		return time.Time{}, types.ErrBadRedelegationDst
+	}
+
+	delValAddr := sdk.ValAddress(delAddr)
+
+	// probono validator is not allowed to redelegate since the amount is community reserve
+	if valSrcAddr.Equals(delValAddr) && srcValidator.IsProbono() {
+		return time.Time{}, types.ErrProbonoCannotRedelegate
 	}
 
 	// check if this is a transitive redelegation

@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/testutil"
+	disttypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	"github.com/cosmos/cosmos-sdk/x/staking/teststaking"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -202,7 +203,7 @@ func TestDelegateAboveMaxStakingAmount_Settlus(t *testing.T) {
 	_, err := app.StakingKeeper.Delegate(ctx, testAddrs[1], remainingDel, types.Unbonded, validator, false)
 	require.NoError(t, err)
 
-	// try to delegate one more SETL than allowed should throw error, because we already reached max staking amount
+	// try to delegate one more SETL than allowed should throw error, because we already reached Max Delegation
 	_, err = app.StakingKeeper.Delegate(ctx, testAddrs[1], app.StakingKeeper.TokensFromConsensusPower(ctx, 1), types.Unbonded, validator, false)
 	require.Error(t, types.ErrMaxStakingAmountReached, err)
 
@@ -385,6 +386,63 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 	newNotBonded = app.BankKeeper.GetBalance(ctx, app.StakingKeeper.GetNotBondedPool(ctx).GetAddress(), bondDenom).Amount
 	require.True(sdk.IntEq(t, newBonded, oldBonded.SubRaw(1)))
 	require.True(sdk.IntEq(t, newNotBonded, oldNotBonded.AddRaw(1)))
+}
+
+func TestUnbondingDelegation_Settlus(t *testing.T) {
+	_, app, ctx := createSettlusTestInput(t)
+
+	initBalance := sdk.NewInt(10000)
+	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 1, initBalance)
+	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)
+
+	startTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
+
+	bondDenom := app.StakingKeeper.BondDenom(ctx)
+	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
+
+	// reset community pool
+	app.DistrKeeper.SetFeePool(ctx, disttypes.InitialFeePool())
+
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(bondDenom, startTokens))))
+	app.AccountKeeper.SetModuleAccount(ctx, notBondedPool)
+
+	// create a validator and a delegator to that validator
+	validator := teststaking.NewValidator(t, addrVals[0], PKs[0])
+
+	validator, issuedShares := validator.AddTokensFromDel(startTokens)
+	require.Equal(t, startTokens, issuedShares.RoundInt())
+
+	// set validator as probono
+	validator.Probono = true
+	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
+	require.True(t, validator.IsBonded())
+
+	delegation := types.NewDelegation(addrDels[0], addrVals[0], issuedShares)
+	app.StakingKeeper.SetDelegation(ctx, delegation)
+
+	unDelegateAmount := sdk.NewInt(7)
+
+	// Don't use undelegate, because it messes up with hooks in test input
+	// Instead set unbonding delegation directly
+	coins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), unDelegateAmount))
+	if err := app.BankKeeper.SendCoinsFromModuleToModule(ctx, types.BondedPoolName, types.NotBondedPoolName, coins); err != nil {
+		panic(err)
+	}
+
+	completionTime := ctx.BlockHeader().Time.Add(app.StakingKeeper.UnbondingTime(ctx))
+
+	ubd := app.StakingKeeper.SetUnbondingDelegationEntry(ctx, addrDels[0], addrVals[0], ctx.BlockHeight(), completionTime, unDelegateAmount)
+	app.StakingKeeper.InsertUBDQueue(ctx, ubd, completionTime)
+
+	// // mature unbonding delegations
+	ctx = ctx.WithBlockTime(completionTime)
+
+	_, err := app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0])
+	require.NoError(t, err)
+
+	// check if community pool receives correct amount by complete unbonding, and validator receives nothing and balance remains the same in initialized state
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(unDelegateAmount)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, initBalance, app.BankKeeper.GetBalance(ctx, addrDels[0], bondDenom).Amount)
 }
 
 // // test undelegating self delegation from a validator pushing it below MinSelfDelegation
@@ -807,6 +865,52 @@ func TestRedelegateToSameValidator(t *testing.T) {
 
 	_, err := app.StakingKeeper.BeginRedelegation(ctx, val0AccAddr, addrVals[0], addrVals[0], sdk.NewDec(5))
 	require.Error(t, err)
+}
+
+func TestRedelegate_Settlus(t *testing.T) {
+	_, app, ctx := createSettlusTestInput(t)
+
+	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 2, sdk.NewInt(0))
+	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)
+
+	startTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 20)
+	val1Tokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
+	val2Tokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
+	startCoins := sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), startTokens))
+
+	// add bonded tokens to pool for delegations
+	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
+	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), startCoins))
+	app.AccountKeeper.SetModuleAccount(ctx, notBondedPool)
+
+	// create a val1 with a self-delegation
+	val1 := teststaking.NewValidator(t, addrVals[0], PKs[0])
+	val1, share1 := val1.AddTokensFromDel(val1Tokens)
+	require.Equal(t, val1Tokens, share1.RoundInt())
+
+	val2 := teststaking.NewValidator(t, addrVals[1], PKs[1])
+	val2, share2 := val2.AddTokensFromDel(val2Tokens)
+	require.Equal(t, val2Tokens, share2.RoundInt())
+
+	// set validator to probono
+	val1.Probono = true
+	val1 = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, val1, true)
+	require.True(t, val1.IsBonded())
+
+	val2 = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, val2, true)
+	require.True(t, val2.IsBonded())
+
+	val1AccAddr := sdk.AccAddress(addrVals[0].Bytes())
+	selfDelegation1 := types.NewDelegation(val1AccAddr, addrVals[0], share1)
+	app.StakingKeeper.SetDelegation(ctx, selfDelegation1)
+
+	val2AccAddr := sdk.AccAddress(addrVals[1].Bytes())
+	selfDelegation2 := types.NewDelegation(val2AccAddr, addrVals[1], share2)
+	app.StakingKeeper.SetDelegation(ctx, selfDelegation2)
+
+	// try redelegate from probono, but it should fail
+	_, err := app.StakingKeeper.BeginRedelegation(ctx, val1AccAddr, addrVals[0], addrVals[1], sdk.NewDec(5))
+	require.Error(t, types.ErrProbonoCannotRedelegate, err)
 }
 
 func TestRedelegationMaxEntries(t *testing.T) {
