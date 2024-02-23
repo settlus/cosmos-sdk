@@ -168,6 +168,10 @@ var suggestedProposalTypes = []proposalType{
 		MsgType: "/cosmos.staking.v1beta1.MsgCreateValidatorByGov",
 	},
 	{
+		Name:    "probono-delegate-by-gov",
+		MsgType: "/cosmos.staking.v1beta1.MsgProbonoDelegateByGov",
+	},
+	{
 		Name:    proposalOther,
 		MsgType: "", // user will input the message type
 	},

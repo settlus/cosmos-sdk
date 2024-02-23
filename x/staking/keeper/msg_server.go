@@ -557,3 +557,35 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 
 	return &types.MsgCreateValidatorByGovResponse{}, nil
 }
+
+func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgProbonoDelegateByGov) (*types.MsgProbonoDelegateByGovResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
+	if k.GetAuthority() != req.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
+	}
+
+	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	valAddr := sdk.ValAddress(acc)
+
+	newDelegateMsg := types.MsgDelegate{
+		DelegatorAddress:  req.DelegatorAddress,
+		ValidatorAddress:  valAddr.String(),
+		Amount: req.Amount,
+	}
+
+	_, err = k.Delegate(ctx, &newDelegateMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := k.Logger(ctx)
+	logger.Info("Probono validator delegated by proposal")
+
+	return &types.MsgProbonoDelegateByGovResponse{}, nil
+}
