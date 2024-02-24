@@ -566,12 +566,22 @@ func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgPro
 		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
 	}
 
-	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	delAddr, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	valAddr := sdk.ValAddress(acc)
+	valAddr := sdk.ValAddress(delAddr)
+
+	// validator must already be registered
+	validator, found := k.GetValidator(ctx, valAddr)
+	if !found {
+		return nil, types.ErrNoValidatorFound
+	}
+
+	if !validator.IsProbono() {
+		return nil, types.ErrInvalidProbonoDelegateGov
+	}
 
 	newDelegateMsg := types.MsgDelegate{
 		DelegatorAddress:  req.DelegatorAddress,
