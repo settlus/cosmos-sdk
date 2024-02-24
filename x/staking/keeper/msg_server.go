@@ -584,9 +584,9 @@ func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgPro
 	}
 
 	newDelegateMsg := types.MsgDelegate{
-		DelegatorAddress:  req.DelegatorAddress,
-		ValidatorAddress:  valAddr.String(),
-		Amount: req.Amount,
+		DelegatorAddress: req.DelegatorAddress,
+		ValidatorAddress: valAddr.String(),
+		Amount:           req.Amount,
 	}
 
 	_, err = k.Delegate(ctx, &newDelegateMsg)

@@ -32,7 +32,7 @@ var (
 	_ sdk.Msg                            = &MsgBeginRedelegate{}
 	_ sdk.Msg                            = &MsgCancelUnbondingDelegation{}
 	_ sdk.Msg                            = &MsgCreateValidatorByGov{}
-	_ sdk.Msg 						     = &MsgProbonoDelegateByGov{}
+	_ sdk.Msg                            = &MsgProbonoDelegateByGov{}
 )
 
 // NewMsgCreateValidator creates a new MsgCreateValidator instance.
