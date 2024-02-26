@@ -19,6 +19,7 @@ const (
 	TypeMsgDelegate                  = "delegate"
 	TypeMsgBeginRedelegate           = "begin_redelegate"
 	TypeMsgCreateValidatorByGov      = "create_validator_by_gov"
+	TypeMsgProbonoDelegateByGov      = "probono_delegate_by_gov"
 )
 
 var (
@@ -31,6 +32,7 @@ var (
 	_ sdk.Msg                            = &MsgBeginRedelegate{}
 	_ sdk.Msg                            = &MsgCancelUnbondingDelegation{}
 	_ sdk.Msg                            = &MsgCreateValidatorByGov{}
+	_ sdk.Msg                            = &MsgProbonoDelegateByGov{}
 )
 
 // NewMsgCreateValidator creates a new MsgCreateValidator instance.
@@ -488,4 +490,32 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 func (msg MsgCreateValidatorByGov) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	var pubKey cryptotypes.PubKey
 	return unpacker.UnpackAny(msg.Pubkey, &pubKey)
+}
+
+// Route implements the sdk.Msg interface.
+func (msg MsgProbonoDelegateByGov) Route() string { return RouterKey }
+
+// Type implements the sdk.Msg interface.
+func (msg MsgProbonoDelegateByGov) Type() string { return TypeMsgProbonoDelegateByGov }
+
+// GetSigners implements the sdk.Msg interface.
+func (msg MsgProbonoDelegateByGov) GetSigners() []sdk.AccAddress {
+	addr, _ := sdk.AccAddressFromBech32(msg.Authority)
+	return []sdk.AccAddress{addr}
+}
+
+// ValidateBasic implements the sdk.Msg interface.
+func (msg MsgProbonoDelegateByGov) ValidateBasic() error {
+	if _, err := sdk.AccAddressFromBech32(msg.DelegatorAddress); err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf("invalid delegator address: %s", err)
+	}
+
+	if !msg.Amount.IsValid() || !msg.Amount.Amount.IsPositive() {
+		return sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest,
+			"invalid delegation amount",
+		)
+	}
+
+	return nil
 }

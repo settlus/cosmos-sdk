@@ -228,6 +228,7 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 // Delegate defines a method for performing a delegation of coins from a delegator to a validator
 func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*types.MsgDelegateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+
 	valAddr, valErr := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 	if valErr != nil {
 		return nil, valErr
@@ -238,48 +239,14 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 		return nil, types.ErrNoValidatorFound
 	}
 
-	delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+	if validator.IsProbono() {
+		return nil, types.ErrProbonoCannotBeDelegated
+	}
+
+	err := k.processDelegation(ctx, msg, validator)
 	if err != nil {
 		return nil, err
 	}
-
-	bondDenom := k.BondDenom(ctx)
-	if msg.Amount.Denom != bondDenom {
-		return nil, sdkerrors.Wrapf(
-			sdkerrors.ErrInvalidRequest, "invalid coin denomination: got %s, expected %s", msg.Amount.Denom, bondDenom,
-		)
-	}
-
-	// NOTE: source funds are always unbonded
-	newShares, err := k.Keeper.Delegate(ctx, delegatorAddress, msg.Amount.Amount, types.Unbonded, validator, true)
-	if err != nil {
-		return nil, err
-	}
-
-	if msg.Amount.Amount.IsInt64() {
-		defer func() {
-			telemetry.IncrCounter(1, types.ModuleName, "delegate")
-			telemetry.SetGaugeWithLabels(
-				[]string{"tx", "msg", msg.Type()},
-				float32(msg.Amount.Amount.Int64()),
-				[]metrics.Label{telemetry.NewLabel("denom", msg.Amount.Denom)},
-			)
-		}()
-	}
-
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			types.EventTypeDelegate,
-			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAddress),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
-			sdk.NewAttribute(types.AttributeKeyNewShares, newShares.String()),
-		),
-		sdk.NewEvent(
-			sdk.EventTypeMessage,
-			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
-			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
-		),
-	})
 
 	return &types.MsgDelegateResponse{}, nil
 }
@@ -556,4 +523,93 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 	logger.Info("Created validator by proposal")
 
 	return &types.MsgCreateValidatorByGovResponse{}, nil
+}
+
+func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgProbonoDelegateByGov) (*types.MsgProbonoDelegateByGovResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
+	if k.GetAuthority() != req.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
+	}
+
+	delAddr, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	valAddr := sdk.ValAddress(delAddr)
+
+	// validator must already be registered
+	validator, found := k.GetValidator(ctx, valAddr)
+	if !found {
+		return nil, types.ErrNoValidatorFound
+	}
+
+	if !validator.IsProbono() {
+		return nil, types.ErrInvalidProbonoDelegateGov
+	}
+
+	newDelegateMsg := types.MsgDelegate{
+		DelegatorAddress: req.DelegatorAddress,
+		ValidatorAddress: valAddr.String(),
+		Amount:           req.Amount,
+	}
+
+	err = k.processDelegation(ctx, &newDelegateMsg, validator)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := k.Logger(ctx)
+	logger.Info("Probono validator delegated by proposal")
+
+	return &types.MsgProbonoDelegateByGovResponse{}, nil
+}
+
+func (k msgServer) processDelegation(ctx sdk.Context, msg *types.MsgDelegate, validator types.Validator) error {
+	delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+	if err != nil {
+		return err
+	}
+
+	bondDenom := k.BondDenom(ctx)
+	if msg.Amount.Denom != bondDenom {
+		return sdkerrors.Wrapf(
+			sdkerrors.ErrInvalidRequest, "invalid coin denomination: got %s, expected %s", msg.Amount.Denom, bondDenom,
+		)
+	}
+
+	// NOTE: source funds are always unbonded
+	newShares, err := k.Keeper.Delegate(ctx, delegatorAddress, msg.Amount.Amount, types.Unbonded, validator, true)
+	if err != nil {
+		return err
+	}
+
+	if msg.Amount.Amount.IsInt64() {
+		defer func() {
+			telemetry.IncrCounter(1, types.ModuleName, "delegate")
+			telemetry.SetGaugeWithLabels(
+				[]string{"tx", "msg", msg.Type()},
+				float32(msg.Amount.Amount.Int64()),
+				[]metrics.Label{telemetry.NewLabel("denom", msg.Amount.Denom)},
+			)
+		}()
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeDelegate,
+			sdk.NewAttribute(types.AttributeKeyValidator, msg.ValidatorAddress),
+			sdk.NewAttribute(sdk.AttributeKeyAmount, msg.Amount.String()),
+			sdk.NewAttribute(types.AttributeKeyNewShares, newShares.String()),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.DelegatorAddress),
+		),
+	})
+
+	return nil
 }
