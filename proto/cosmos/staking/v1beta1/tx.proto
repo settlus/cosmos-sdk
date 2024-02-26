@@ -42,8 +42,8 @@ service Msg {
   // CreateValidatorByGov is a governance operation for create a validator
   rpc CreateValidatorByGov(MsgCreateValidatorByGov) returns (MsgCreateValidatorByGovResponse);
 
-    // ProbonoDelegateByGov is a governance operation for create a validator
-    rpc ProbonoDelegateByGov(MsgProbonoDelegateByGov) returns (MsgProbonoDelegateByGovResponse);
+  // ProbonoDelegateByGov is a governance operation for create a validator
+  rpc ProbonoDelegateByGov(MsgProbonoDelegateByGov) returns (MsgProbonoDelegateByGovResponse);
 }
 
 // MsgCreateValidator defines a SDK message for creating a new validator.

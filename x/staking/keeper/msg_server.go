@@ -240,10 +240,10 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 	}
 
 	if validator.IsProbono() {
-		return nil, types.ErrProbonoCannotSelfDelegate
+		return nil, types.ErrProbonoCannotBeDelegated
 	}
 
-	err := k.delegateProcess(ctx, msg, validator)
+	err := k.processDelegation(ctx, msg, validator)
 	if err != nil {
 		return nil, err
 	}
@@ -556,7 +556,7 @@ func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgPro
 		Amount:           req.Amount,
 	}
 
-	err = k.delegateProcess(ctx, &newDelegateMsg, validator)
+	err = k.processDelegation(ctx, &newDelegateMsg, validator)
 	if err != nil {
 		return nil, err
 	}
@@ -567,7 +567,7 @@ func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgPro
 	return &types.MsgProbonoDelegateByGovResponse{}, nil
 }
 
-func (k msgServer) delegateProcess(ctx sdk.Context, msg *types.MsgDelegate, validator types.Validator) error {
+func (k msgServer) processDelegation(ctx sdk.Context, msg *types.MsgDelegate, validator types.Validator) error {
 	delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
 	if err != nil {
 		return err
