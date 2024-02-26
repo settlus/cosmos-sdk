@@ -153,6 +153,14 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	valAddrs := simapp.ConvertAddrsToValAddrs(addrs)
 	tstaking := teststaking.NewHelper(t, ctx, app.StakingKeeper)
 
+	// Fund community pool
+	communityPoolAmount := sdk.NewInt(100)
+	communityPoolReserve := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, communityPoolAmount))
+
+	feePool := app.DistrKeeper.GetFeePool(ctx)
+	feePool.CommunityPool = sdk.NewDecCoinsFromCoins(communityPoolReserve...)
+	app.DistrKeeper.SetFeePool(ctx, feePool)
+
 	// create validator with 50% commission
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDecWithPrec(5, 1), sdk.NewDecWithPrec(5, 1), sdk.NewDec(0))
 	tstaking.CreateValidator(valAddrs[0], valConsPk1, sdk.NewInt(100), true)
@@ -161,9 +169,10 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	tstaking.CreateValidator(valAddrs[1], valConsPk2, sdk.NewInt(50), true)
 
-	// create third validator with 0% commission
+	// create third validator as a probono validator with 0% commission
+	probonoAmount := sdk.NewInt(70)
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
-	tstaking.CreateProbonoValidator(valAddrs[2], valConsPk3, sdk.NewInt(70), true)
+	tstaking.CreateProbonoValidator(valAddrs[2], valConsPk3, probonoAmount, true)
 
 	// create fourth validator with 0% commission
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
@@ -186,11 +195,13 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 		Power:   1,
 	}
 
+	initCommunityPoolAmount := sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount.Sub(probonoAmount))}}
+
 	// assert initial state: zero outstanding rewards, zero community pool, zero commission, zero current rewards
 	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[0]).Rewards.IsZero())
 	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[1]).Rewards.IsZero())
 	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[2]).Rewards.IsZero())
-	require.True(t, app.DistrKeeper.GetFeePool(ctx).CommunityPool.IsZero())
+	require.Equal(t, initCommunityPoolAmount, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
 	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[0]).Commission.IsZero())
 	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[1]).Commission.IsZero())
 	require.True(t, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[2]).Commission.IsZero())
@@ -274,10 +285,10 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	// check max validator param, if max validator number is changed, below numbers also has to be changed
 	require.Equal(t, uint32(100), app.StakingKeeper.GetParams(ctx).MaxValidators)
 	// check community pool amount through variables
-	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...), app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...).Add(initCommunityPoolAmount...), app.DistrKeeper.GetFeePool(ctx).CommunityPool)
 	// given fee is 100, so reward per validator is 1
 	// so exact community pool contribution is 0.6(20% from val1,2,4) + 1(20% + rest 80% probono) = 1.6
-	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(16, 1)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(16, 1)}}.Add(initCommunityPoolAmount...), app.DistrKeeper.GetFeePool(ctx).CommunityPool)
 	// 50% commission for first proposer, (0.8 * 50%) * 100 / 2 = 0.4
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(4, 1)}}, app.DistrKeeper.GetValidatorAccumulatedCommission(ctx, valAddrs[0]).Commission)
 	// zero commission for second proposer
