@@ -56,6 +56,6 @@ var (
 	ErrProbonoCannotBeDelegated        = sdkerrors.Register(ModuleName, 44, "probono validator cannot be delegated to")
 	ErrProbonoCannotUndelegate         = sdkerrors.Register(ModuleName, 45, "probono validator cannot undelegate")
 	ErrProbonoCannotRedelegate         = sdkerrors.Register(ModuleName, 46, "probono validator cannot redelegate")
-	ErrProbonoCannotSelfDelegate       = sdkerrors.Register(ModuleName, 47, "probono validator cannot self-delegate")
+	ErrProbonoCannotSelfDelegate       = sdkerrors.Register(ModuleName, 47, "probono validator cannot use msg delegate, only allowed to delegate by gov")
 	ErrInvalidProbonoDelegateGov       = sdkerrors.Register(ModuleName, 48, "probono delegate gov can only be used by probono validator")
 )
