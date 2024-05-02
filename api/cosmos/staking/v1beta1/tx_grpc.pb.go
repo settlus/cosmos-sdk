@@ -26,6 +26,7 @@ const (
 	Msg_Undelegate_FullMethodName                = "/cosmos.staking.v1beta1.Msg/Undelegate"
 	Msg_CancelUnbondingDelegation_FullMethodName = "/cosmos.staking.v1beta1.Msg/CancelUnbondingDelegation"
 	Msg_UpdateParams_FullMethodName              = "/cosmos.staking.v1beta1.Msg/UpdateParams"
+	Msg_CreateValidatorByGov_FullMethodName      = "/cosmos.staking.v1beta1.Msg/CreateValidatorByGov"
 )
 
 // MsgClient is the client API for Msg service.
@@ -56,6 +57,8 @@ type MsgClient interface {
 	// parameters.
 	// Since: cosmos-sdk 0.47
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
+	// CreateValidatorByGov is a governance operation for create a validator
+	CreateValidatorByGov(ctx context.Context, in *MsgCreateValidatorByGov, opts ...grpc.CallOption) (*MsgCreateValidatorByGovResponse, error)
 }
 
 type msgClient struct {
@@ -136,6 +139,16 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
+func (c *msgClient) CreateValidatorByGov(ctx context.Context, in *MsgCreateValidatorByGov, opts ...grpc.CallOption) (*MsgCreateValidatorByGovResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCreateValidatorByGovResponse)
+	err := c.cc.Invoke(ctx, Msg_CreateValidatorByGov_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -164,6 +177,8 @@ type MsgServer interface {
 	// parameters.
 	// Since: cosmos-sdk 0.47
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
+	// CreateValidatorByGov is a governance operation for create a validator
+	CreateValidatorByGov(context.Context, *MsgCreateValidatorByGov) (*MsgCreateValidatorByGovResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -191,6 +206,9 @@ func (UnimplementedMsgServer) CancelUnbondingDelegation(context.Context, *MsgCan
 }
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
+}
+func (UnimplementedMsgServer) CreateValidatorByGov(context.Context, *MsgCreateValidatorByGov) (*MsgCreateValidatorByGovResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateValidatorByGov not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -331,6 +349,24 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_CreateValidatorByGov_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCreateValidatorByGov)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CreateValidatorByGov(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CreateValidatorByGov_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CreateValidatorByGov(ctx, req.(*MsgCreateValidatorByGov))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -365,6 +401,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateParams",
 			Handler:    _Msg_UpdateParams_Handler,
+		},
+		{
+			MethodName: "CreateValidatorByGov",
+			Handler:    _Msg_CreateValidatorByGov_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

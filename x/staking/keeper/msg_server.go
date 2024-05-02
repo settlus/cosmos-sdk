@@ -512,19 +512,19 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
 	}
 
-	acc, err := sdk.AccAddressFromBech32(req.DelegatorAddress)
+	acc, err := sdk.ValAddressFromBech32(req.ValidatorAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	valAddr := sdk.ValAddress(acc)
+	delAddr := sdk.AccAddress(acc)
 
 	newMsg := types.MsgCreateValidator{
 		Description:       req.Description,
 		Commission:        req.Commission,
 		MinSelfDelegation: req.MinSelfDelegation,
-		DelegatorAddress:  req.DelegatorAddress,
-		ValidatorAddress:  valAddr.String(),
+		DelegatorAddress:  delAddr.String(),
+		ValidatorAddress:  req.ValidatorAddress,
 		Pubkey:            req.Pubkey,
 		Value:             req.Value,
 		MaxDelegation:     req.MaxDelegation,
