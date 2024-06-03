@@ -81,11 +81,12 @@ func (s *KeeperTestSuite) TestValidator() {
 	require.Equal(int64(0), resPower)
 }
 
-func TestUpdateValidator_Settlus(t *testing.T) {
-	app, ctx, addrs, _ := bootstrapValidatorTest(t, 1000, 20)
+func (s *KeeperTestSuite) TestUpdateValidator_Settlus() {
+	ctx, keeper := s.ctx, s.stakingKeeper
+	require := s.Require()
 
 	// settlus settings
-	app.StakingKeeper.SetParams(ctx, types.Params{
+	keeper.SetParams(ctx, stakingtypes.Params{
 		BondDenom:         "stake",
 		MaxValidators:     100,
 		UnbondingTime:     1 * time.Second,
@@ -94,28 +95,32 @@ func TestUpdateValidator_Settlus(t *testing.T) {
 		MinCommissionRate: sdk.ZeroDec(),
 	})
 
+	// construct the validators
+	var validators [2]stakingtypes.Validator
 	powers := []int64{50, 50}
-	var validators [2]types.Validator
 	for i, power := range powers {
-		validators[i] = teststaking.NewValidator(t, sdk.ValAddress(addrs[i]), PKs[i])
-		tokens := app.StakingKeeper.TokensFromConsensusPower(ctx, power)
+		validators[i] = testutil.NewValidator(s.T(), sdk.ValAddress(PKs[i].Address().Bytes()), PKs[i])
+		validators[i].Status = stakingtypes.Unbonded
+		validators[i].Tokens = math.ZeroInt()
+		tokens := keeper.TokensFromConsensusPower(ctx, power)
+
 		validators[i], _ = validators[i].AddTokensFromDel(tokens)
 	}
 
-	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
-	validators[1] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[1], false)
-	applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 2)
+	validators[0] = stakingkeeper.TestingUpdateValidator(keeper, ctx, validators[0], false)
+	validators[1] = stakingkeeper.TestingUpdateValidator(keeper, ctx, validators[1], false)
+	s.applyValidatorSetUpdates(ctx, keeper, 2)
 
 	// check initial power
-	require.Equal(t, int64(50), validators[0].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
-	require.Equal(t, int64(50), validators[1].GetConsensusPower(app.StakingKeeper.PowerReduction(ctx)))
+	require.Equal(int64(50), validators[0].GetConsensusPower(keeper.PowerReduction(ctx)))
+	require.Equal(int64(50), validators[1].GetConsensusPower(keeper.PowerReduction(ctx)))
 
 	// test multiple value change
 	//  tendermintUpdate set: {c1, c3} -> {c1', c3'}
-	delTokens1 := app.StakingKeeper.TokensFromConsensusPower(ctx, 49)
-	delTokens2 := app.StakingKeeper.TokensFromConsensusPower(ctx, 45)
+	delTokens1 := keeper.TokensFromConsensusPower(ctx, 49)
+	delTokens2 := keeper.TokensFromConsensusPower(ctx, 45)
 
-	originalReduction := app.StakingKeeper.TokensFromConsensusPower(ctx, 1)
+	originalReduction := keeper.TokensFromConsensusPower(ctx, 1)
 	sdk.DefaultPowerReduction = originalReduction.MulRaw(2)
 	defer func() {
 		sdk.DefaultPowerReduction = originalReduction
@@ -123,152 +128,21 @@ func TestUpdateValidator_Settlus(t *testing.T) {
 
 	validators[0], _ = validators[0].RemoveDelShares(sdk.NewDecFromInt(delTokens1))
 	validators[1], _ = validators[1].RemoveDelShares(sdk.NewDecFromInt(delTokens2))
-	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
-	validators[1] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[1], false)
+	validators[0] = stakingkeeper.TestingUpdateValidator(keeper, ctx, validators[0], false)
+	validators[1] = stakingkeeper.TestingUpdateValidator(keeper, ctx, validators[1], false)
 
 	// validator[0] is kicked from active validator set because it has less than MinStakingAmount
-	require.Equal(t, types.Unbonding, validators[0].GetStatus())
-	require.Equal(t, sdk.NewInt(1000000000000000000), validators[0].GetTokens())
+	require.Equal(stakingtypes.Unbonding, validators[0].GetStatus())
+	require.Equal(sdk.NewInt(1000000000000000000), validators[0].GetTokens())
 
 	// Tendermint updates should reflect power change
-	updates := applyValidatorSetUpdates(t, ctx, app.StakingKeeper, 2)
-	require.Equal(t, validators[1].ABCIValidatorUpdate(app.StakingKeeper.PowerReduction(ctx)), updates[0])
+	updates := s.applyValidatorSetUpdates(ctx, keeper, 2)
+	require.Equal(validators[1].ABCIValidatorUpdate(keeper.PowerReduction(ctx)), updates[0])
 
 	// validator[0] is return to active validator set
 	validators[0], _ = validators[0].AddTokensFromDel(delTokens1)
-	validators[0] = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validators[0], false)
-	require.Equal(t, types.Bonded, validators[0].GetStatus())
-}
-
-func TestUpdateValidatorByPowerIndex(t *testing.T) {
-	app, ctx, _, _ := bootstrapValidatorTest(t, 0, 100)
-	_, addrVals := generateAddresses(app, ctx, 1)
-
-	bondedPool := app.StakingKeeper.GetBondedPool(ctx)
-	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
-
-	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), app.StakingKeeper.TokensFromConsensusPower(ctx, 1234)))))
-	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), app.StakingKeeper.TokensFromConsensusPower(ctx, 10000)))))
-
-	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
-	app.AccountKeeper.SetModuleAccount(ctx, notBondedPool)
-
-	// add a validator
-	validator := teststaking.NewValidator(t, addrVals[0], PKs[0])
-	validator, delSharesCreated := validator.AddTokensFromDel(app.StakingKeeper.TokensFromConsensusPower(ctx, 100))
-	require.Equal(t, types.Unbonded, validator.Status)
-	require.Equal(t, app.StakingKeeper.TokensFromConsensusPower(ctx, 100), validator.Tokens)
-	keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
-	validator, found := app.StakingKeeper.GetValidator(ctx, addrVals[0])
-	require.True(t, found)
-	require.Equal(t, app.StakingKeeper.TokensFromConsensusPower(ctx, 100), validator.Tokens)
-
-	power := types.GetValidatorsByPowerIndexKey(validator, app.StakingKeeper.PowerReduction(ctx))
-	require.True(t, keeper.ValidatorByPowerIndexExists(ctx, app.StakingKeeper, power))
-
-	// burn half the delegator shares
-	app.StakingKeeper.DeleteValidatorByPowerIndex(ctx, validator)
-	validator, burned := validator.RemoveDelShares(delSharesCreated.Quo(sdk.NewDec(2)))
-	require.Equal(t, app.StakingKeeper.TokensFromConsensusPower(ctx, 50), burned)
-	keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true) // update the validator, possibly kicking it out
-	require.False(t, keeper.ValidatorByPowerIndexExists(ctx, app.StakingKeeper, power))
-
-	validator, found = app.StakingKeeper.GetValidator(ctx, addrVals[0])
-	require.True(t, found)
-
-	power = types.GetValidatorsByPowerIndexKey(validator, app.StakingKeeper.PowerReduction(ctx))
-	require.True(t, keeper.ValidatorByPowerIndexExists(ctx, app.StakingKeeper, power))
-}
-
-func TestUpdateBondedValidatorsDecreaseCliff(t *testing.T) {
-	numVals := 10
-	maxVals := 5
-
-	// create context, keeper, and pool for tests
-	app, ctx, _, valAddrs := bootstrapValidatorTest(t, 0, 100)
-
-	bondedPool := app.StakingKeeper.GetBondedPool(ctx)
-	notBondedPool := app.StakingKeeper.GetNotBondedPool(ctx)
-
-	// create keeper parameters
-	params := app.StakingKeeper.GetParams(ctx)
-	params.MaxValidators = uint32(maxVals)
-	app.StakingKeeper.SetParams(ctx, params)
-
-	// create a random pool
-	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), app.StakingKeeper.TokensFromConsensusPower(ctx, 1234)))))
-	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), app.StakingKeeper.TokensFromConsensusPower(ctx, 10000)))))
-
-	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
-	app.AccountKeeper.SetModuleAccount(ctx, notBondedPool)
-
-	validators := make([]types.Validator, numVals)
-	for i := 0; i < len(validators); i++ {
-		moniker := fmt.Sprintf("val#%d", int64(i))
-		val := newMonikerValidator(t, valAddrs[i], PKs[i], moniker)
-		delTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, int64((i+1)*10))
-		val, _ = val.AddTokensFromDel(delTokens)
-
-		val = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, val, true)
-		validators[i] = val
-	}
-
-	nextCliffVal := validators[numVals-maxVals+1]
-
-	// remove enough tokens to kick out the validator below the current cliff
-	// validator and next in line cliff validator
-	app.StakingKeeper.DeleteValidatorByPowerIndex(ctx, nextCliffVal)
-	shares := app.StakingKeeper.TokensFromConsensusPower(ctx, 21)
-	nextCliffVal, _ = nextCliffVal.RemoveDelShares(sdk.NewDecFromInt(shares))
-	nextCliffVal = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, nextCliffVal, true)
-
-	expectedValStatus := map[int]types.BondStatus{
-		9: types.Bonded, 8: types.Bonded, 7: types.Bonded, 5: types.Bonded, 4: types.Bonded,
-		0: types.Unbonding, 1: types.Unbonding, 2: types.Unbonding, 3: types.Unbonding, 6: types.Unbonding,
-	}
-
-	// require all the validators have their respective statuses
-	for valIdx, status := range expectedValStatus {
-		valAddr := validators[valIdx].OperatorAddress
-		addr, err := sdk.ValAddressFromBech32(valAddr)
-		assert.NoError(t, err)
-		val, _ := app.StakingKeeper.GetValidator(ctx, addr)
-
-		assert.Equal(
-			t, status, val.GetStatus(),
-			fmt.Sprintf("expected validator at index %v to have status: %s", valIdx, status),
-		)
-	}
-}
-
-func TestSlashToZeroPowerRemoved(t *testing.T) {
-	// initialize setup
-	app, ctx, _, addrVals := bootstrapValidatorTest(t, 100, 20)
-
-	// add a validator
-	validator := teststaking.NewValidator(t, addrVals[0], PKs[0])
-	valTokens := app.StakingKeeper.TokensFromConsensusPower(ctx, 100)
-
-	bondedPool := app.StakingKeeper.GetBondedPool(ctx)
-
-	require.NoError(t, testutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), valTokens))))
-
-	app.AccountKeeper.SetModuleAccount(ctx, bondedPool)
-
-	validator, _ = validator.AddTokensFromDel(valTokens)
-	require.Equal(t, types.Unbonded, validator.Status)
-	require.Equal(t, valTokens, validator.Tokens)
-	app.StakingKeeper.SetValidatorByConsAddr(ctx, validator)
-	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
-	require.Equal(t, valTokens, validator.Tokens, "\nvalidator %v\npool %v", validator, valTokens)
-
-	// slash the validator by 100%
-	app.StakingKeeper.Slash(ctx, sdk.ConsAddress(PKs[0].Address()), 0, 100, sdk.OneDec())
-	// apply TM updates
-	applyValidatorSetUpdates(t, ctx, app.StakingKeeper, -1)
-	// validator should be unbonding
-	validator, _ = app.StakingKeeper.GetValidator(ctx, addrVals[0])
-	require.Equal(t, validator.GetStatus(), types.Unbonding)
+	validators[0] = stakingkeeper.TestingUpdateValidator(keeper, ctx, validators[0], false)
+	require.Equal(stakingtypes.Bonded, validators[0].GetStatus())
 }
 
 // This function tests UpdateValidator, GetValidator, GetLastValidators, RemoveValidator

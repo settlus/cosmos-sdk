@@ -48,7 +48,6 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 	}
 
 	return Validator{
-<<<<<<< HEAD
 		OperatorAddress:         operator.String(),
 		ConsensusPubkey:         pkAny,
 		Jailed:                  false,
@@ -61,22 +60,8 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		Commission:              NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
 		MinSelfDelegation:       math.OneInt(),
 		UnbondingOnHoldRefCount: 0,
-		Probono:                 false,
-=======
-		OperatorAddress:   operator.String(),
-		ConsensusPubkey:   pkAny,
-		Jailed:            false,
-		Status:            Unbonded,
-		Tokens:            sdk.ZeroInt(),
-		DelegatorShares:   sdk.ZeroDec(),
-		Description:       description,
-		UnbondingHeight:   int64(0),
-		UnbondingTime:     time.Unix(0, 0).UTC(),
-		Commission:        NewCommission(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
-		MinSelfDelegation: sdk.OneInt(),
 		MaxDelegation:     sdk.ZeroInt(),
-		Probono:           false,
->>>>>>> 06944b5d7 (refactor tokenomics logic)
+		ProbonoRate:                 sdk.ZeroDec(),
 	}, nil
 }
 
@@ -473,7 +458,7 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
 		v.MaxDelegation.Equal(other.MaxDelegation) &&
-		v.Probono == other.Probono &&
+		v.ProbonoRate.Equal(other.ProbonoRate) &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 
@@ -485,7 +470,7 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool        { return v.Jailed }
-func (v Validator) IsProbono() bool       { return v.Probono }
+func (v Validator) GetProbonoRate() sdk.Dec       { return v.ProbonoRate }
 func (v Validator) GetMoniker() string    { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {
@@ -539,16 +524,10 @@ func (v Validator) GetBondedTokens() math.Int { return v.BondedTokens() }
 func (v Validator) GetConsensusPower(r math.Int) int64 {
 	return v.ConsensusPower(r)
 }
-<<<<<<< HEAD
-func (v Validator) GetCommission() math.LegacyDec      { return v.Commission.Rate }
-func (v Validator) GetMinSelfDelegation() math.Int     { return v.MinSelfDelegation }
-func (v Validator) GetDelegatorShares() math.LegacyDec { return v.DelegatorShares }
-=======
 func (v Validator) GetCommission() sdk.Dec         { return v.Commission.Rate }
 func (v Validator) GetMinSelfDelegation() math.Int { return v.MinSelfDelegation }
 func (v Validator) GetMaxDelegation() math.Int     { return v.MaxDelegation }
 func (v Validator) GetDelegatorShares() sdk.Dec    { return v.DelegatorShares }
->>>>>>> 06944b5d7 (refactor tokenomics logic)
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (v Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {

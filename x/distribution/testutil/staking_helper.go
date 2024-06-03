@@ -18,6 +18,15 @@ func CreateValidator(pk cryptotypes.PubKey, stake math.Int) (stakingtypes.Valida
 	return val, err
 }
 
+func CreateProbonoValidator(pk cryptotypes.PubKey, stake math.Int) (stakingtypes.Validator, error) {
+	valConsAddr := sdk.GetConsAddress(pk)
+	val, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr), pk, stakingtypes.Description{})
+	val.Tokens = stake
+	val.DelegatorShares = math.LegacyNewDecFromInt(val.Tokens)
+	val.ProbonoRate = sdk.OneDec()
+	return val, err
+}
+
 func CallCreateValidatorHooks(ctx sdk.Context, k keeper.Keeper, addr sdk.AccAddress, valAddr sdk.ValAddress) error {
 	err := k.Hooks().AfterValidatorCreated(ctx, valAddr)
 	if err != nil {

@@ -18,7 +18,6 @@ type DelegationI interface {
 // ValidatorI expected validator functions
 type ValidatorI interface {
 	IsJailed() bool                                          // whether the validator is jailed
-	IsProbono() bool                                         // whether the validator is probono
 	GetMoniker() string                                      // moniker of the validator
 	GetStatus() BondStatus                                   // status of the validator
 	IsBonded() bool                                          // check if has a bonded status
@@ -34,6 +33,8 @@ type ValidatorI interface {
 	GetCommission() math.LegacyDec                           // validator commission rate
 	GetMinSelfDelegation() math.Int                          // validator minimum self delegation
 	GetDelegatorShares() math.LegacyDec                      // total outstanding delegator shares
+	GetMaxDelegation() math.Int                              // maximum of validator's self declared delegations
+	GetProbonoRate() sdk.Dec								 // probono rate of validator
 	TokensFromShares(sdk.Dec) math.LegacyDec                 // token worth of provided delegator shares
 	TokensFromSharesTruncated(sdk.Dec) math.LegacyDec        // token worth of provided delegator shares, truncated
 	TokensFromSharesRoundUp(sdk.Dec) math.LegacyDec          // token worth of provided delegator shares, rounded up

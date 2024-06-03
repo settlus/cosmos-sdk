@@ -65,19 +65,6 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) error {
 	return nil
 }
 
-// Get all parameters as types.Params
-func (k Keeper) GetParams(ctx sdk.Context) types.Params {
-	return types.NewParams(
-		k.UnbondingTime(ctx),
-		k.MaxValidators(ctx),
-		k.MaxEntries(ctx),
-		k.HistoricalEntries(ctx),
-		k.BondDenom(ctx),
-		k.MinCommissionRate(ctx),
-	)
-}
-
-// GetParams sets the x/staking module parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamsKey)

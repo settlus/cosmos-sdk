@@ -142,7 +142,11 @@ message Validator {
     (gogoproto.nullable)   = false
   ];
   // probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
-  bool probono = 15;
+  string probono_rate = 15 [
+    (cosmos_proto.scalar)  = "cosmos.Dec",
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable)   = false
+  ];
 }
 
 // BondStatus is the status of a validator.

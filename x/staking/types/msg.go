@@ -39,7 +39,7 @@ var (
 // Delegator address and validator address are the same.
 func NewMsgCreateValidator(
 	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
-	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probono bool,
+	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probonoRate sdk.Dec,
 ) (*MsgCreateValidator, error) {
 	var pkAny *codectypes.Any
 	if pubKey != nil {
@@ -57,7 +57,7 @@ func NewMsgCreateValidator(
 		Commission:        commission,
 		MinSelfDelegation: minSelfDelegation,
 		MaxDelegation:     maxDelegation,
-		IsProbono:         probono,
+		ProbonoRate:       probonoRate,
 	}, nil
 }
 
@@ -141,6 +141,10 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateProbonoRate(&msg.ProbonoRate); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -153,14 +157,13 @@ func (msg MsgCreateValidator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) 
 // NewMsgEditValidator creates a new MsgEditValidator instance
 //
 //nolint:interfacer
-func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation, newMaxDelegation *math.Int, probono bool) *MsgEditValidator {
+func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation, newMaxDelegation *math.Int) *MsgEditValidator {
 	return &MsgEditValidator{
 		Description:       description,
 		CommissionRate:    newRate,
 		ValidatorAddress:  valAddr.String(),
 		MinSelfDelegation: newMinSelfDelegation,
 		MaxDelegation:     newMaxDelegation,
-		Probono:           probono,
 	}
 }
 
@@ -456,6 +459,24 @@ func ValidateMaxDelegation(maxDelegation *math.Int) error {
 	return nil
 }
 
+func ValidateProbonoRate(probonoRate *sdk.Dec) error {
+	if probonoRate != nil && probonoRate.IsNegative() {
+		return sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest,
+			"probono rate cannot be negative",
+		)
+	}
+
+	if probonoRate != nil && probonoRate.GT(sdk.OneDec()) {
+		return sdkerrors.Wrap(
+			sdkerrors.ErrInvalidRequest,
+			fmt.Sprintf("probono rate must be less than or equal to 1, got %s", probonoRate),
+		)
+	}
+
+	return nil
+}
+
 // Route implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) Route() string { return RouterKey }
 
@@ -502,6 +523,10 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 	}
 
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
+		return err
+	}
+
+	if err := ValidateProbonoRate(&msg.ProbonoRate); err != nil {
 		return err
 	}
 
