@@ -18,12 +18,12 @@ type DelegationI interface {
 // ValidatorI expected validator functions
 type ValidatorI interface {
 	IsJailed() bool                                          // whether the validator is jailed
-	IsProbono() bool                                         // whether the validator is probono
 	GetMoniker() string                                      // moniker of the validator
 	GetStatus() BondStatus                                   // status of the validator
 	IsBonded() bool                                          // check if has a bonded status
 	IsUnbonded() bool                                        // check if has status unbonded
-	IsUnbonding() bool                                       // check if has status unbonding
+	IsUnbonding() bool
+	IsProbono() bool                                       // check if has status unbonding
 	GetOperator() sdk.ValAddress                             // operator address to receive/return validators coins
 	ConsPubKey() (cryptotypes.PubKey, error)                 // validation consensus pubkey (cryptotypes.PubKey)
 	TmConsPublicKey() (tmprotocrypto.PublicKey, error)       // validation consensus pubkey (Tendermint)
@@ -34,6 +34,8 @@ type ValidatorI interface {
 	GetCommission() math.LegacyDec                           // validator commission rate
 	GetMinSelfDelegation() math.Int                          // validator minimum self delegation
 	GetDelegatorShares() math.LegacyDec                      // total outstanding delegator shares
+	GetMaxDelegation() math.Int                              // maximum of validator's self declared delegations
+	GetProbonoRate() sdk.Dec                                 // probono rate of validator
 	TokensFromShares(sdk.Dec) math.LegacyDec                 // token worth of provided delegator shares
 	TokensFromSharesTruncated(sdk.Dec) math.LegacyDec        // token worth of provided delegator shares, truncated
 	TokensFromSharesRoundUp(sdk.Dec) math.LegacyDec          // token worth of provided delegator shares, rounded up

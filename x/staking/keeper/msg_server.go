@@ -107,7 +107,13 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 	validator.MaxDelegation = msg.MaxDelegation
-	validator.Probono = msg.IsProbono
+	validator.ProbonoRate = msg.ProbonoRate
+	
+	if validator.ProbonoRate.Equal(sdk.ZeroDec()) {
+		validator.Probono = false
+	} else {
+		validator.Probono = true
+	}
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -191,7 +197,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 		validator.MaxDelegation = *msg.MaxDelegation
 	}
-	validator.Probono = msg.Probono
 
 	k.SetValidator(ctx, validator)
 
@@ -201,7 +206,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
 			sdk.NewAttribute(types.AtrributeMaxDelegation, validator.MaxDelegation.String()),
-			sdk.NewAttribute(types.AtrributeProbono, strconv.FormatBool(validator.Probono)),
 		),
 	})
 
@@ -504,6 +508,7 @@ func (ms msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdatePara
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
+
 func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -528,7 +533,7 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		Pubkey:            req.Pubkey,
 		Value:             req.Value,
 		MaxDelegation:     req.MaxDelegation,
-		IsProbono:         req.IsProbono,
+		ProbonoRate:       req.ProbonoRate,
 	}
 
 	_, err = k.CreateValidator(ctx, &newMsg)

@@ -1,9 +1,7 @@
 package keeper
 
 import (
-	"fmt"
-
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
@@ -14,11 +12,8 @@ import (
 // bondedVotes is a list of (validator address, validator voted on last block flag) for all
 // validators in the bonded set.
 func (k Keeper) AllocateTokens(
-	ctx sdk.Context, sumPreviousPrecommitPower, totalPreviousPower int64,
-	previousProposer sdk.ConsAddress, bondedVotes []abci.VoteInfo,
+	ctx sdk.Context, totalPreviousPower int64, bondedVotes []abci.VoteInfo,
 ) {
-	logger := k.Logger(ctx)
-
 	// fetch and clear the collected fees for distribution, since this is
 	// called in BeginBlock, collected fees will be from the previous block
 	// (and distributed to the previous proposer)
@@ -41,46 +36,9 @@ func (k Keeper) AllocateTokens(
 		return
 	}
 
-	// calculate fraction votes
-	previousFractionVotes := sdk.NewDec(sumPreviousPrecommitPower).Quo(sdk.NewDec(totalPreviousPower))
-
-	// calculate previous proposer reward
-	baseProposerReward := k.GetBaseProposerReward(ctx)
-	bonusProposerReward := k.GetBonusProposerReward(ctx)
-	proposerMultiplier := baseProposerReward.Add(bonusProposerReward.MulTruncate(previousFractionVotes))
-	proposerReward := feesCollected.MulDecTruncate(proposerMultiplier)
-
-	// pay previous proposer
 	remaining := feesCollected
-	proposerValidator := k.stakingKeeper.ValidatorByConsAddr(ctx, previousProposer)
-
-	if proposerValidator != nil {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(
-				types.EventTypeProposerReward,
-				sdk.NewAttribute(sdk.AttributeKeyAmount, proposerReward.String()),
-				sdk.NewAttribute(types.AttributeKeyValidator, proposerValidator.GetOperator().String()),
-			),
-		)
-
-		k.AllocateTokensToValidator(ctx, proposerValidator, proposerReward)
-		remaining = remaining.Sub(proposerReward)
-	} else {
-		// previous proposer can be unknown if say, the unbonding period is 1 block, so
-		// e.g. a validator undelegates at block X, it's removed entirely by
-		// block X+1's endblock, then X+2 we need to refer to the previous
-		// proposer for X+1, but we've forgotten about them.
-		logger.Error(fmt.Sprintf(
-			"WARNING: Attempt to allocate proposer rewards to unknown proposer %s. "+
-				"This should happen only if the proposer unbonded completely within a single block, "+
-				"which generally should not happen except in exceptional circumstances (or fuzz testing). "+
-				"We recommend you investigate immediately.",
-			previousProposer.String()))
-	}
-
-	// calculate fraction allocated to validators
 	communityTax := k.GetCommunityTax(ctx)
-	voteMultiplier := sdk.OneDec().Sub(proposerMultiplier).Sub(communityTax)
+	voteMultiplier := sdk.OneDec().Sub(communityTax)
 	feeMultiplier := feesCollected.MulDecTruncate(voteMultiplier)
 
 	if sdk.ConstantReward {
@@ -103,17 +61,17 @@ func (k Keeper) AllocateTokens(
 	// Ref: https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
-		if validator.IsProbono() {
-			continue
-		}
+		probonoRate := validator.GetProbonoRate()
+		
 		// TODO: Consider micro-slashing for missing votes.
 		//
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
 		powerFraction := sdk.NewDec(vote.Validator.Power).QuoTruncate(sdk.NewDec(totalPreviousPower))
-		reward := feeMultiplier.MulDecTruncate(powerFraction)
+		rewardByPower := feeMultiplier.MulDecTruncate(powerFraction)
+		finalReward := rewardByPower.MulDecTruncate(sdk.OneDec().Sub(probonoRate))
 
-		k.AllocateTokensToValidator(ctx, validator, reward)
-		remaining = remaining.Sub(reward)
+		k.AllocateTokensToValidator(ctx, validator, finalReward)
+		remaining = remaining.Sub(finalReward)
 	}
 
 	// allocate community funding
