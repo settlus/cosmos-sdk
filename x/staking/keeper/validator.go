@@ -408,6 +408,8 @@ func (k Keeper) UnbondAllMatureValidators(ctx sdk.Context) (probonos map[string]
 	blockTime := ctx.BlockTime()
 	blockHeight := ctx.BlockHeight()
 
+	probonos = make(map[string]bool)
+
 	// unbondingValIterator will contains all validator addresses indexed under
 	// the ValidatorQueueKey prefix. Note, the entire index key is composed as
 	// ValidatorQueueKey | timeBzLen (8-byte big endian) | timeBz | heightBz (8-byte big endian),
