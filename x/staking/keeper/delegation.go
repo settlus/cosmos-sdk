@@ -856,7 +856,7 @@ func (k Keeper) Undelegate(
 // CompleteUnbonding completes the unbonding of all mature entries in the
 // retrieved unbonding delegation object and returns the total unbonding balance
 // or an error upon failure.
-func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress) (sdk.Coins, error) {
+func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, probono bool) (sdk.Coins, error) {
 	ubd, found := k.GetUnbondingDelegation(ctx, delAddr, valAddr)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
@@ -886,12 +886,12 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 				); err != nil {
 					return nil, err
 				}
-
 				// send back the tokens to the community pool if the validator is probono
-				if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
-					return nil, err
+				if probono {
+					if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
+						return nil, err
+					}	
 				}
-
 				balances = balances.Add(amt)
 			}
 		}

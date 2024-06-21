@@ -402,7 +402,7 @@ func (k Keeper) ValidatorQueueIterator(ctx sdk.Context, endTime time.Time, endHe
 
 // UnbondAllMatureValidators unbonds all the mature unbonding validators that
 // have finished their unbonding period.
-func (k Keeper) UnbondAllMatureValidators(ctx sdk.Context) {
+func (k Keeper) UnbondAllMatureValidators(ctx sdk.Context) (probonos map[string]bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	blockTime := ctx.BlockTime()
@@ -444,6 +444,10 @@ func (k Keeper) UnbondAllMatureValidators(ctx sdk.Context) {
 					panic("unexpected validator in unbonding queue; status was not unbonding")
 				}
 
+				if val.Probono {
+					probonos[val.OperatorAddress] = true
+				}
+
 				val = k.UnbondingToUnbonded(ctx, val)
 				if val.GetDelegatorShares().IsZero() {
 					k.RemoveValidator(ctx, val.GetOperator())
@@ -453,4 +457,5 @@ func (k Keeper) UnbondAllMatureValidators(ctx sdk.Context) {
 			store.Delete(key)
 		}
 	}
+	return probonos
 }

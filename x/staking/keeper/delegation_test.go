@@ -368,7 +368,7 @@ func TestUnbondingDelegationsMaxEntries(t *testing.T) {
 
 	// mature unbonding delegations
 	ctx = ctx.WithBlockTime(completionTime)
-	_, err = app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0])
+	_, err = app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0], false)
 	require.NoError(t, err)
 
 	newBonded = app.BankKeeper.GetBalance(ctx, app.StakingKeeper.GetBondedPool(ctx).GetAddress(), bondDenom).Amount
@@ -437,7 +437,7 @@ func TestUnbondingDelegation_Settlus(t *testing.T) {
 	// // mature unbonding delegations
 	ctx = ctx.WithBlockTime(completionTime)
 
-	_, err := app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0])
+	_, err := app.StakingKeeper.CompleteUnbonding(ctx, addrDels[0], addrVals[0], true)
 	require.NoError(t, err)
 
 	// check if community pool receives correct amount by complete unbonding, and validator receives nothing and balance remains the same in initialized state

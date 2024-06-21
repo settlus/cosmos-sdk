@@ -30,7 +30,8 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 	}
 
 	// unbond all mature validators from the unbonding queue
-	k.UnbondAllMatureValidators(ctx)
+	// and return probono validators
+	probonos := k.UnbondAllMatureValidators(ctx)
 
 	// Remove all mature unbonding delegations from the ubd queue.
 	matureUnbonds := k.DequeueAllMatureUBDQueue(ctx, ctx.BlockHeader().Time)
@@ -41,7 +42,7 @@ func (k Keeper) BlockValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 		}
 		delegatorAddress := sdk.MustAccAddressFromBech32(dvPair.DelegatorAddress)
 
-		balances, err := k.CompleteUnbonding(ctx, delegatorAddress, addr)
+		balances, err := k.CompleteUnbonding(ctx, delegatorAddress, addr, probonos[addr.String()])
 		if err != nil {
 			continue
 		}

@@ -34,12 +34,7 @@ func (h Hooks) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddre
 }
 
 func (h Hooks) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coin sdk.Coin) error {
-	validator := h.k.stakingKeeper.Validator(ctx, valAddr)
-	if validator == nil {
-		return fmt.Errorf("validator not found: %s", valAddr)
-	}
-
-	if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
+	if sdk.ValAddress(delAddr).Equals(valAddr) {
 		err := h.k.FundCommunityPool(ctx, sdk.NewCoins(coin), delAddr)
 		if err != nil {
 			return err
