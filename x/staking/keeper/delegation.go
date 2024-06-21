@@ -890,7 +890,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 				if probono {
 					if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
 						return nil, err
-					}	
+					}
 				}
 				balances = balances.Add(amt)
 			}
