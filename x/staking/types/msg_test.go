@@ -218,6 +218,7 @@ func TestMsgCreateValidatorByGov(t *testing.T) {
 	}{
 		{"basic good", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), true},
 		{"partial description", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), true},
+		{"correct probono rate", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("0.4"), true},
 		{"empty description", "", "", "", "", "", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
 		{"empty address", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), emptyAddr, pk1, coinPos, sdk.ZeroDec(), false},
 		{"empty pubkey", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, emptyPubkey, coinPos, sdk.ZeroDec(), false},
@@ -226,7 +227,7 @@ func TestMsgCreateValidatorByGov(t *testing.T) {
 		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
 		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
 		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
-		{"negative probono rate", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.NewDec(-1), false},
+		{"negative probono rate", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("-0.1"), false},
 		{"probono rate over 1", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("1.5"), false},
 	}
 

@@ -22,39 +22,48 @@ func TestCreateProbonoValidator_Settlus(t *testing.T) {
 	// reset fee pool
 	app.DistrKeeper.SetFeePool(ctx, disttypes.InitialFeePool())
 
-	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 2, app.StakingKeeper.TokensFromConsensusPower(ctx, 1000))
+	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 3, app.StakingKeeper.TokensFromConsensusPower(ctx, 1000))
 	valAddrs := simapp.ConvertAddrsToValAddrs(addrDels)
-	pks := simapp.CreateTestPubKeys(2)
+	pks := simapp.CreateTestPubKeys(3)
 	tstaking := teststaking.NewHelper(t, ctx, app.StakingKeeper)
 
 	// Fund community pool
 	communityPoolAmount := sdk.NewInt(100)
 	communityPoolReserve := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, communityPoolAmount))
+
 	probonoAmount := sdk.NewInt(40)
+	partialProbonoAmount := sdk.NewInt(30)
 	normalAmount := sdk.NewInt(30)
 
 	feePool := app.DistrKeeper.GetFeePool(ctx)
 	feePool.CommunityPool = sdk.NewDecCoinsFromCoins(communityPoolReserve...)
 	app.DistrKeeper.SetFeePool(ctx, feePool)
 
-	// create PROBONO validator with 0% commission
+	// create first validator with 0% commission
 	tstaking.Commission = types.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
-	tstaking.CreateProbonoValidator(valAddrs[0], pks[0], probonoAmount, true, sdk.NewDecWithPrec(2, 10))
+	tstaking.CreateValidator(valAddrs[0], pks[0], normalAmount, true)
 
-	// create second validator with 0% commission
+	// create full PROBONO validator with 0% commission,
 	tstaking.Commission = types.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
-	tstaking.CreateValidator(valAddrs[1], pks[1], normalAmount, true)
+	tstaking.CreateProbonoValidator(valAddrs[1], pks[1], probonoAmount, true, sdk.OneDec())
+
+	// create partial probono validator with 0% commission, 20^% probono rate
+	tstaking.Commission = types.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
+	tstaking.CreateProbonoValidator(valAddrs[2], pks[2], partialProbonoAmount, true, sdk.NewDecWithPrec(2, 1))
 
 	staking.EndBlocker(ctx, app.StakingKeeper)
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 
-	probonoVal := app.StakingKeeper.Validator(ctx, valAddrs[0])
-	normalVal := app.StakingKeeper.Validator(ctx, valAddrs[1])
+	normalVal := app.StakingKeeper.Validator(ctx, valAddrs[0])
+	probonoVal := app.StakingKeeper.Validator(ctx, valAddrs[1])
+	partialProbonoVal := app.StakingKeeper.Validator(ctx, valAddrs[2])
 
 	// check if the probono amount is correctly subtracted from the community pool and each validator has correct amount
+	// only full probono validator gets staking amount from the community pool
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount.Sub(probonoAmount))}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
-	require.Equal(t, probonoVal.GetTokens(), probonoAmount)
 	require.Equal(t, normalVal.GetTokens(), normalAmount)
+	require.Equal(t, probonoVal.GetTokens(), probonoAmount)
+	require.Equal(t, partialProbonoVal.GetTokens(), partialProbonoAmount)
 }
 
 func TestCancelUnbondingDelegation(t *testing.T) {
