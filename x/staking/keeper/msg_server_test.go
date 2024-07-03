@@ -39,7 +39,7 @@ func TestCreateProbonoValidator_Settlus(t *testing.T) {
 
 	// create PROBONO validator with 0% commission
 	tstaking.Commission = types.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
-	tstaking.CreateProbonoValidator(valAddrs[0], pks[0], probonoAmount, true)
+	tstaking.CreateProbonoValidator(valAddrs[0], pks[0], probonoAmount, true, sdk.NewDecWithPrec(2, 10))
 
 	// create second validator with 0% commission
 	tstaking.Commission = types.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))

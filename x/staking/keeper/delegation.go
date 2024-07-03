@@ -928,8 +928,8 @@ func (k Keeper) BeginRedelegation(
 
 	delValAddr := sdk.ValAddress(delAddr)
 
-	// probono validator is not allowed to redelegate since the amount is community reserve
-	if valSrcAddr.Equals(delValAddr) && srcValidator.IsProbono() {
+	// full probono validator is not allowed to redelegate since the staking amount is community reserve
+	if valSrcAddr.Equals(delValAddr) && srcValidator.GetProbonoRate().Equal(sdk.OneDec()) {
 		return time.Time{}, types.ErrProbonoCannotRedelegate
 	}
 

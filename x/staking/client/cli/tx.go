@@ -82,7 +82,7 @@ func NewCreateValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(FlagSetCommissionCreate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
 	cmd.Flags().AddFlagSet(FlagSetMaxDelegation())
-	cmd.Flags().AddFlagSet(FlagSetProbono())
+	cmd.Flags().AddFlagSet(FlagSetProbonoRate())
 
 	cmd.Flags().String(FlagIP, "", fmt.Sprintf("The node's public IP. It takes effect only when used in combination with --%s", flags.FlagGenerateOnly))
 	cmd.Flags().String(FlagNodeID, "", "The node's ID")
@@ -150,14 +150,7 @@ func NewEditValidatorCmd() *cobra.Command {
 				newMaxDelegation = &msb
 			}
 
-			var newIsProbono bool
-
-			newIsProbono, err = cmd.Flags().GetBool(FlagProbono)
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newMaxDelegation, newIsProbono)
+			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation, newMaxDelegation)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -166,7 +159,7 @@ func NewEditValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(flagSetDescriptionEdit())
 	cmd.Flags().AddFlagSet(flagSetCommissionUpdate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
-	cmd.Flags().AddFlagSet(FlagSetProbono())
+	cmd.Flags().AddFlagSet(FlagSetProbonoRate())
 
 	flags.AddTxFlagsToCmd(cmd)
 
@@ -417,10 +410,15 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
-	probono, _ := fs.GetBool(FlagProbono)
+	pbRateStr, _ := fs.GetString(FlagProbonoRate)
+
+	probonoRate, err := sdk.NewDecFromStr(pbRateStr) 
+	if err != nil {
+		return txf, nil, err
+	}
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, probono,
+		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, probonoRate,
 	)
 	if err != nil {
 		return txf, nil, err
@@ -456,7 +454,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
 	fsCreateValidator.AddFlagSet(FlagSetMaxDelegation())
-	fsCreateValidator.AddFlagSet(FlagSetProbono())
+	fsCreateValidator.AddFlagSet(FlagSetProbonoRate())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
 
@@ -487,7 +485,7 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
 	MaxDelegation           string
-	Probono                 bool
+	ProbonoRate             string
 	PubKey                  cryptotypes.PubKey
 
 	IP              string
@@ -564,7 +562,7 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 		return c, err
 	}
 
-	c.Probono, err = flagSet.GetBool(FlagProbono)
+	c.ProbonoRate, err = flagSet.GetString(FlagProbonoRate)
 	if err != nil {
 		return c, err
 	}
@@ -646,8 +644,15 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
+	pbRateStr := config.ProbonoRate
+
+	probonoRate, err := sdk.NewDecFromStr(pbRateStr) 
+	if err != nil {
+		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probonoRate must be between 0 and 1")
+	}
+
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, config.Probono,
+		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, probonoRate,
 	)
 	if err != nil {
 		return txBldr, msg, err

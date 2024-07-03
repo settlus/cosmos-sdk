@@ -103,17 +103,16 @@ func (k Keeper) AllocateTokens(
 	// Ref: https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
-		if validator.IsProbono() {
-			continue
-		}
+		probonoRate := validator.GetProbonoRate()
 		// TODO: Consider micro-slashing for missing votes.
 		//
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
 		powerFraction := sdk.NewDec(vote.Validator.Power).QuoTruncate(sdk.NewDec(totalPreviousPower))
-		reward := feeMultiplier.MulDecTruncate(powerFraction)
+		rewardByPower := feeMultiplier.MulDecTruncate(powerFraction)
+		finalReward := rewardByPower.MulDecTruncate(sdk.OneDec().Sub(probonoRate))
 
-		k.AllocateTokensToValidator(ctx, validator, reward)
-		remaining = remaining.Sub(reward)
+		k.AllocateTokensToValidator(ctx, validator, finalReward)
+		remaining = remaining.Sub(finalReward)
 	}
 
 	// allocate community funding

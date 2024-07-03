@@ -18,7 +18,6 @@ type DelegationI interface {
 // ValidatorI expected validator functions
 type ValidatorI interface {
 	IsJailed() bool                                          // whether the validator is jailed
-	IsProbono() bool                                         // whether the validator is probono
 	GetMoniker() string                                      // moniker of the validator
 	GetStatus() BondStatus                                   // status of the validator
 	IsBonded() bool                                          // check if has a bonded status
@@ -29,6 +28,7 @@ type ValidatorI interface {
 	TmConsPublicKey() (tmprotocrypto.PublicKey, error)       // validation consensus pubkey (Tendermint)
 	GetConsAddr() (sdk.ConsAddress, error)                   // validation consensus address
 	GetTokens() math.Int                                     // validation tokens
+	GetProbonoRate() sdk.Dec								 // validator probono rate
 	GetBondedTokens() math.Int                               // validator bonded tokens
 	GetConsensusPower(math.Int) int64                        // validation power in tendermint
 	GetCommission() sdk.Dec                                  // validator commission rate

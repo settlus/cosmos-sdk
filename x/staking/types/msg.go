@@ -39,7 +39,7 @@ var (
 // Delegator address and validator address are the same.
 func NewMsgCreateValidator(
 	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
-	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probono bool,
+	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probonoRate sdk.Dec,
 ) (*MsgCreateValidator, error) {
 	var pkAny *codectypes.Any
 	if pubKey != nil {
@@ -57,7 +57,7 @@ func NewMsgCreateValidator(
 		Commission:        commission,
 		MinSelfDelegation: minSelfDelegation,
 		MaxDelegation:     maxDelegation,
-		IsProbono:         probono,
+		ProbonoRate:       probonoRate,
 	}, nil
 }
 
@@ -137,6 +137,10 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return ErrSelfDelegationBelowMinimum
 	}
 
+	if(msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")	
+	}
+
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
 		return err
 	}
@@ -153,14 +157,13 @@ func (msg MsgCreateValidator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) 
 // NewMsgEditValidator creates a new MsgEditValidator instance
 //
 //nolint:interfacer
-func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation, newMaxDelegation *math.Int, probono bool) *MsgEditValidator {
+func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation, newMaxDelegation *math.Int) *MsgEditValidator {
 	return &MsgEditValidator{
 		Description:       description,
 		CommissionRate:    newRate,
 		ValidatorAddress:  valAddr.String(),
 		MinSelfDelegation: newMinSelfDelegation,
 		MaxDelegation:     newMaxDelegation,
-		Probono:           probono,
 	}
 }
 
@@ -435,6 +438,29 @@ func ValidateMaxDelegation(maxDelegation *math.Int) error {
 	return nil
 }
 
+func NewMsgCreateValidatorByGov(
+	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
+	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probonoRate sdk.Dec,
+) (*MsgCreateValidatorByGov, error) {
+	var pkAny *codectypes.Any
+	if pubKey != nil {
+		var err error
+		if pkAny, err = codectypes.NewAnyWithValue(pubKey); err != nil {
+			return nil, err
+		}
+	}
+	return &MsgCreateValidatorByGov{
+		Description:       description,
+		ValidatorAddress:  valAddr.String(),
+		Pubkey:            pkAny,
+		Value:             selfDelegation,
+		Commission:        commission,
+		MinSelfDelegation: minSelfDelegation,
+		ProbonoRate:       probonoRate,
+		MaxDelegation:     maxDelegation,
+	}, nil
+}
+
 // Route implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) Route() string { return RouterKey }
 
@@ -449,6 +475,10 @@ func (msg MsgCreateValidatorByGov) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) ValidateBasic() error {
+	if(&msg != nil) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprint(msg))
+	}
+
 	if msg.Pubkey == nil {
 		return ErrEmptyValidatorPubKey
 	}
@@ -478,6 +508,10 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 
 	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
 		return ErrSelfDelegationBelowMinimum
+	}
+
+	if(msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")	
 	}
 
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {

@@ -108,7 +108,7 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 	validator.MaxDelegation = msg.MaxDelegation
-	validator.Probono = msg.IsProbono
+	validator.ProbonoRate = msg.ProbonoRate
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -156,12 +156,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 		return nil, types.ErrNoValidatorFound
 	}
 
-	// probono validator cannot be self-modified to non-probono
-	// if want non-probono validator, they need to create a new one
-	if validator.IsProbono() && !msg.Probono {
-		return nil, types.ErrProbonoCannotBeModified
-	}
-
 	// replace all editable fields (clients should autofill existing values)
 	description, err := validator.Description.UpdateDescription(msg.Description)
 	if err != nil {
@@ -203,7 +197,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 		validator.MaxDelegation = *msg.MaxDelegation
 	}
-	validator.Probono = msg.Probono
 
 	k.SetValidator(ctx, validator)
 
@@ -213,7 +206,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
 			sdk.NewAttribute(types.AtrributeMaxDelegation, validator.MaxDelegation.String()),
-			sdk.NewAttribute(types.AtrributeProbono, strconv.FormatBool(validator.Probono)),
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,
@@ -239,7 +231,7 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 		return nil, types.ErrNoValidatorFound
 	}
 
-	if validator.IsProbono() {
+	if validator.GetProbonoRate().Equal(sdk.OneDec()) {
 		return nil, types.ErrProbonoCannotBeDelegated
 	}
 
@@ -511,7 +503,7 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		Pubkey:            req.Pubkey,
 		Value:             req.Value,
 		MaxDelegation:     req.MaxDelegation,
-		IsProbono:         req.IsProbono,
+		ProbonoRate:       req.ProbonoRate,
 	}
 
 	_, err = k.CreateValidator(ctx, &newMsg)
@@ -546,7 +538,7 @@ func (k msgServer) ProbonoDelegateByGov(goCtx context.Context, req *types.MsgPro
 		return nil, types.ErrNoValidatorFound
 	}
 
-	if !validator.IsProbono() {
+	if !validator.GetProbonoRate().Equal(sdk.OneDec()) {
 		return nil, types.ErrInvalidProbonoDelegateGov
 	}
 

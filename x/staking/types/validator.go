@@ -60,7 +60,7 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		Commission:        NewCommission(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec()),
 		MinSelfDelegation: sdk.OneInt(),
 		MaxDelegation:     sdk.ZeroInt(),
-		Probono:           false,
+		ProbonoRate:           sdk.ZeroDec(),
 	}, nil
 }
 
@@ -457,7 +457,7 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
 		v.MaxDelegation.Equal(other.MaxDelegation) &&
-		v.Probono == other.Probono &&
+		v.ProbonoRate == other.ProbonoRate &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 
@@ -469,7 +469,6 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool        { return v.Jailed }
-func (v Validator) IsProbono() bool       { return v.Probono }
 func (v Validator) GetMoniker() string    { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {
@@ -524,6 +523,7 @@ func (v Validator) GetConsensusPower(r math.Int) int64 {
 	return v.ConsensusPower(r)
 }
 func (v Validator) GetCommission() sdk.Dec         { return v.Commission.Rate }
+func (v Validator) GetProbonoRate() sdk.Dec        { return v.ProbonoRate }
 func (v Validator) GetMinSelfDelegation() math.Int { return v.MinSelfDelegation }
 func (v Validator) GetMaxDelegation() math.Int     { return v.MaxDelegation }
 func (v Validator) GetDelegatorShares() sdk.Dec    { return v.DelegatorShares }

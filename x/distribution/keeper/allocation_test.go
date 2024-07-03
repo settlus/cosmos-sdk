@@ -172,7 +172,7 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	// create third validator as a probono validator with 0% commission
 	probonoAmount := sdk.NewInt(70)
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
-	tstaking.CreateProbonoValidator(valAddrs[2], valConsPk3, probonoAmount, true)
+	tstaking.CreateProbonoValidator(valAddrs[2], valConsPk3, probonoAmount, true, sdk.OneDec())
 
 	// create fourth validator with 0% commission
 	tstaking.Commission = stakingtypes.NewCommissionRates(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))

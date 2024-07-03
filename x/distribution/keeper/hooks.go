@@ -20,7 +20,8 @@ func (k Keeper) Hooks() Hooks { return Hooks{k} }
 
 func (h Hooks) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coins sdk.Coins) error {
 	validator := h.k.stakingKeeper.Validator(ctx, valAddr)
-	if validator.IsProbono() && sdk.ValAddress(delAddr).Equals(valAddr) {
+	// Only full probono validators can receive delegation from fee pool
+	if validator.GetProbonoRate().Equal(sdk.OneDec()) && sdk.ValAddress(delAddr).Equals(valAddr) {
 		err := h.k.DistributeFromFeePool(ctx, coins, delAddr)
 		if err != nil {
 			return err
@@ -39,7 +40,7 @@ func (h Hooks) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAd
 		return fmt.Errorf("validator not found: %s", valAddr)
 	}
 
-	if sdk.ValAddress(delAddr).Equals(valAddr) && validator.IsProbono() {
+	if sdk.ValAddress(delAddr).Equals(valAddr) && validator.GetProbonoRate().Equal(sdk.OneDec()) {
 		err := h.k.FundCommunityPool(ctx, sdk.NewCoins(coin), delAddr)
 		if err != nil {
 			return err

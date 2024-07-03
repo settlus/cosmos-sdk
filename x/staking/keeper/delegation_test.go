@@ -412,8 +412,8 @@ func TestUnbondingDelegation_Settlus(t *testing.T) {
 	validator, issuedShares := validator.AddTokensFromDel(startTokens)
 	require.Equal(t, startTokens, issuedShares.RoundInt())
 
-	// set validator as probono
-	validator.Probono = true
+	// set validator as full probono
+	validator.ProbonoRate = sdk.OneDec()
 	validator = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, validator, true)
 	require.True(t, validator.IsBonded())
 
@@ -892,8 +892,8 @@ func TestRedelegate_Settlus(t *testing.T) {
 	val2, share2 := val2.AddTokensFromDel(val2Tokens)
 	require.Equal(t, val2Tokens, share2.RoundInt())
 
-	// set validator to probono
-	val1.Probono = true
+	// set validator to full probono
+	val1.ProbonoRate = sdk.OneDec()
 	val1 = keeper.TestingUpdateValidator(app.StakingKeeper, ctx, val1, true)
 	require.True(t, val1.IsBonded())
 
