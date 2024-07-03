@@ -412,7 +412,7 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 
 	pbRateStr, _ := fs.GetString(FlagProbonoRate)
 
-	probonoRate, err := sdk.NewDecFromStr(pbRateStr) 
+	probonoRate, err := sdk.NewDecFromStr(pbRateStr)
 	if err != nil {
 		return txf, nil, err
 	}
@@ -646,7 +646,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 
 	pbRateStr := config.ProbonoRate
 
-	probonoRate, err := sdk.NewDecFromStr(pbRateStr) 
+	probonoRate, err := sdk.NewDecFromStr(pbRateStr)
 	if err != nil {
 		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probonoRate must be between 0 and 1")
 	}

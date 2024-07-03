@@ -137,8 +137,8 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return ErrSelfDelegationBelowMinimum
 	}
 
-	if(msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")	
+	if msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")
 	}
 
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
@@ -475,7 +475,7 @@ func (msg MsgCreateValidatorByGov) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) ValidateBasic() error {
-	if(&msg != nil) {
+	if &msg != nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprint(msg))
 	}
 
@@ -510,8 +510,8 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 		return ErrSelfDelegationBelowMinimum
 	}
 
-	if(msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")	
+	if msg.ProbonoRate.GT(sdk.OneDec()) || msg.ProbonoRate.IsNegative() {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono rate must be in between 0 and 1 (inclusive)")
 	}
 
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {

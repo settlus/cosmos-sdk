@@ -28,7 +28,7 @@ type ValidatorI interface {
 	TmConsPublicKey() (tmprotocrypto.PublicKey, error)       // validation consensus pubkey (Tendermint)
 	GetConsAddr() (sdk.ConsAddress, error)                   // validation consensus address
 	GetTokens() math.Int                                     // validation tokens
-	GetProbonoRate() sdk.Dec								 // validator probono rate
+	GetProbonoRate() sdk.Dec                                 // validator probono rate
 	GetBondedTokens() math.Int                               // validator bonded tokens
 	GetConsensusPower(math.Int) int64                        // validation power in tendermint
 	GetCommission() sdk.Dec                                  // validator commission rate
