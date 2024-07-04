@@ -196,7 +196,7 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 		Power:   1,
 	}
 
-	initCommunityPoolAmount := sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount.Sub(probonoAmount))}}
+	initCommunityPoolAmount := sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount)}}
 
 	// assert initial state: zero outstanding rewards, zero community pool, zero commission, zero current rewards
 	require.True(t, app.DistrKeeper.GetValidatorOutstandingRewards(ctx, valAddrs[0]).Rewards.IsZero())

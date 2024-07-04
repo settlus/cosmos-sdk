@@ -204,6 +204,7 @@ func TestMsgUndelegate(t *testing.T) {
 func TestMsgCreateValidatorByGov(t *testing.T) {
 	commission1 := types.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec())
 	commission2 := types.NewCommissionRates(sdk.NewDec(5), sdk.NewDec(5), sdk.NewDec(5))
+	pkAny, _ := codectypes.NewAnyWithValue(pk1)
 
 	tests := []struct {
 		name, moniker, identity, website, securityContact, details string
@@ -211,24 +212,24 @@ func TestMsgCreateValidatorByGov(t *testing.T) {
 		minSelfDelegation                                          sdk.Int
 		maxDelegation                                              sdk.Int
 		validatorAddr                                              sdk.ValAddress
-		pubkey                                                     cryptotypes.PubKey
+		pubkey                                                     *codectypes.Any
 		bond                                                       sdk.Coin
 		probonoRate                                                sdk.Dec
 		expectPass                                                 bool
 	}{
-		{"basic good", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), true},
-		{"partial description", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), true},
-		{"correct probono rate", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("0.4"), true},
-		{"empty description", "", "", "", "", "", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
-		{"empty address", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), emptyAddr, pk1, coinPos, sdk.ZeroDec(), false},
-		{"empty pubkey", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, emptyPubkey, coinPos, sdk.ZeroDec(), false},
-		{"empty bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinZero, sdk.ZeroDec(), false},
-		{"nil bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, sdk.Coin{}, sdk.ZeroDec(), false},
-		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
-		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
-		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.ZeroDec(), false},
-		{"negative probono rate", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("-0.1"), false},
-		{"probono rate over 1", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, sdk.MustNewDecFromStr("1.5"), false},
+		{"basic good", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), true},
+		{"partial description", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), true},
+		{"correct probono rate", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.MustNewDecFromStr("0.4"), true},
+		{"empty description", "", "", "", "", "", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), false},
+		{"empty address", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), emptyAddr, pkAny, coinPos, sdk.ZeroDec(), false},
+		{"empty pubkey", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, nil, coinPos, sdk.ZeroDec(), false},
+		{"empty bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, coinZero, sdk.ZeroDec(), false},
+		{"nil bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pkAny, sdk.Coin{}, sdk.ZeroDec(), false},
+		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), false},
+		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), false},
+		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.ZeroDec(), false},
+		{"negative probono rate", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.MustNewDecFromStr("-0.1"), false},
+		{"probono rate over 1", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pkAny, coinPos, sdk.MustNewDecFromStr("1.5"), false},
 	}
 
 	for _, tc := range tests {

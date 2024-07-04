@@ -674,11 +674,6 @@ func (k Keeper) Delegate(
 
 		coins := sdk.NewCoins(sdk.NewCoin(k.BondDenom(ctx), bondAmt))
 
-		// if a validator is probono, get tokens from community pool
-		if err := k.BeforeDelegateCoinsToModule(ctx, delAddr, validator.GetOperator(), coins); err != nil {
-			return sdk.Dec{}, err
-		}
-
 		if err := k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, delegatorAddress, sendName, coins); err != nil {
 			return sdk.Dec{}, err
 		}
@@ -884,11 +879,6 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, valAd
 				if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(
 					ctx, types.NotBondedPoolName, delegatorAddress, sdk.NewCoins(amt),
 				); err != nil {
-					return nil, err
-				}
-
-				// send back the tokens to the community pool if the validator is probono
-				if err := k.AfterUndelegateCoinsFromModule(ctx, delegatorAddress, valAddr, amt); err != nil {
 					return nil, err
 				}
 

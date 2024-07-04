@@ -457,7 +457,7 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
 		v.MaxDelegation.Equal(other.MaxDelegation) &&
-		v.ProbonoRate == other.ProbonoRate &&
+		v.ProbonoRate.Equal(other.ProbonoRate) &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 

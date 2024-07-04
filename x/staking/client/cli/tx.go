@@ -29,7 +29,7 @@ var (
 	defaultCommissionMaxChangeRate = "0.01"
 	defaultMinSelfDelegation       = "1"
 	defaultMaxDelegation           = "0"
-	defaultProbono                 = false
+	defaultProbonoRate             = "0"
 )
 
 // NewTxCmd returns a root CLI command handler for all x/staking transaction commands.
@@ -468,7 +468,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	probono: %v
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
-		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbono)
+		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbonoRate)
 
 	return fsCreateValidator, defaultsDesc
 }
@@ -598,6 +598,10 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	if c.MaxDelegation == "" {
 		c.MaxDelegation = defaultMaxDelegation
+	}
+
+	if c.ProbonoRate == "" {
+		c.ProbonoRate = defaultProbonoRate
 	}
 
 	return c, nil

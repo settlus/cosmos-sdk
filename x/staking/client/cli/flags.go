@@ -76,7 +76,7 @@ func FlagSetMaxDelegation() *flag.FlagSet {
 
 func FlagSetProbonoRate() *flag.FlagSet {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	fs.String(FlagProbonoRate, "", "Probono rate for the validator")
+	fs.String(FlagProbonoRate, "", "Probono rate for the validator, between 0 and 1")
 	return fs
 }
 

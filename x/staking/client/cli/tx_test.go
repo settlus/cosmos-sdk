@@ -89,11 +89,11 @@ func TestPrepareConfigForTxCreateValidator(t *testing.T) {
 			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", "1000", "0"),
 		},
 		{
-			name: "Custom probono rate",
+			name: "custom probono rate",
 			fsModify: func(fs *pflag.FlagSet) {
-				fs.Set(FlagProbonoRate, "true")
+				fs.Set(FlagProbonoRate, "0.3")
 			},
-			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", "0", "0.5"),
+			expectedCfg: mkTxValCfg(defaultAmount, "0.1", "0.2", "0.01", "1", "0", "0.3"),
 		},
 	}
 

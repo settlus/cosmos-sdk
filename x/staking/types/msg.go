@@ -439,20 +439,13 @@ func ValidateMaxDelegation(maxDelegation *math.Int) error {
 }
 
 func NewMsgCreateValidatorByGov(
-	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
+	valAddr sdk.ValAddress, pubKey *codectypes.Any, //nolint:interfacer
 	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probonoRate sdk.Dec,
 ) (*MsgCreateValidatorByGov, error) {
-	var pkAny *codectypes.Any
-	if pubKey != nil {
-		var err error
-		if pkAny, err = codectypes.NewAnyWithValue(pubKey); err != nil {
-			return nil, err
-		}
-	}
 	return &MsgCreateValidatorByGov{
 		Description:       description,
 		ValidatorAddress:  valAddr.String(),
-		Pubkey:            pkAny,
+		Pubkey:            pubKey,
 		Value:             selfDelegation,
 		Commission:        commission,
 		MinSelfDelegation: minSelfDelegation,
@@ -475,7 +468,7 @@ func (msg MsgCreateValidatorByGov) GetSigners() []sdk.AccAddress {
 
 // ValidateBasic implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) ValidateBasic() error {
-	if &msg != nil {
+	if &msg == nil {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, fmt.Sprint(msg))
 	}
 

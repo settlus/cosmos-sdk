@@ -103,21 +103,3 @@ func (h MultiStakingHooks) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.V
 	}
 	return nil
 }
-
-func (h MultiStakingHooks) BeforeDelegateCoinsToModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coins sdk.Coins) error {
-	for i := range h {
-		if err := h[i].BeforeDelegateCoinsToModule(ctx, delAddr, valAddr, coins); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (h MultiStakingHooks) AfterUndelegateCoinsFromModule(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, coin sdk.Coin) error {
-	for i := range h {
-		if err := h[i].AfterUndelegateCoinsFromModule(ctx, delAddr, valAddr, coin); err != nil {
-			return err
-		}
-	}
-	return nil
-}

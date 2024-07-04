@@ -58,9 +58,7 @@ func TestCreateProbonoValidator_Settlus(t *testing.T) {
 	probonoVal := app.StakingKeeper.Validator(ctx, valAddrs[1])
 	partialProbonoVal := app.StakingKeeper.Validator(ctx, valAddrs[2])
 
-	// check if the probono amount is correctly subtracted from the community pool and each validator has correct amount
-	// only full probono validator gets staking amount from the community pool
-	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount.Sub(probonoAmount))}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecFromInt(communityPoolAmount)}}, app.DistrKeeper.GetFeePool(ctx).CommunityPool)
 	require.Equal(t, normalVal.GetTokens(), normalAmount)
 	require.Equal(t, probonoVal.GetTokens(), probonoAmount)
 	require.Equal(t, partialProbonoVal.GetTokens(), partialProbonoAmount)
