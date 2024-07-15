@@ -60,8 +60,8 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		Commission:              NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
 		MinSelfDelegation:       math.OneInt(),
 		UnbondingOnHoldRefCount: 0,
-		MaxDelegation:     sdk.ZeroInt(),
-		ProbonoRate:                 sdk.ZeroDec(),
+		MaxDelegation:           sdk.ZeroInt(),
+		ProbonoRate:             sdk.ZeroDec(),
 	}, nil
 }
 
@@ -469,10 +469,10 @@ func (v *Validator) Equal(v2 *Validator) bool {
 		v.UnbondingTime.Equal(v2.UnbondingTime)
 }
 
-func (v Validator) IsJailed() bool        { return v.Jailed }
-func (v Validator) GetProbonoRate() sdk.Dec       { return v.ProbonoRate }
-func (v Validator) GetMoniker() string    { return v.Description.Moniker }
-func (v Validator) GetStatus() BondStatus { return v.Status }
+func (v Validator) IsJailed() bool          { return v.Jailed }
+func (v Validator) GetProbonoRate() sdk.Dec { return v.ProbonoRate }
+func (v Validator) GetMoniker() string      { return v.Description.Moniker }
+func (v Validator) GetStatus() BondStatus   { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {
 	if v.OperatorAddress == "" {
 		return nil

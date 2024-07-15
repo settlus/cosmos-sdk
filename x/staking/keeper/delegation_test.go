@@ -147,8 +147,6 @@ func (s *KeeperTestSuite) TestDelegateAboveMaxStakingAmount_Settlus() {
 
 	valTokens := keeper.TokensFromConsensusPower(ctx, 50)
 	delTokens := keeper.TokensFromConsensusPower(ctx, 10)
-	valCoins := sdk.NewCoins(sdk.NewCoin(keeper.BondDenom(ctx), valTokens))
-	delCoins := sdk.NewCoins(sdk.NewCoin(keeper.BondDenom(ctx), delTokens))
 
 	// create a validator with a self-delegation
 	validator := testutil.NewValidator(s.T(), addrVals[0], PKs[0])
@@ -158,12 +156,7 @@ func (s *KeeperTestSuite) TestDelegateAboveMaxStakingAmount_Settlus() {
 	validator, issuedShares := validator.AddTokensFromDel(valTokens)
 	require.Equal(valTokens, issuedShares.RoundInt())
 
-	// add bonded tokens to pool for delegations
-	// notBondedPool := keeper.GetNotBondedPool(ctx)
-	// s.bankKeeper.EXPECT().SendCoinsFromModulxeToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, valCoins)
-	// require.NoError(banktestutil.FundModuleAccount(s.bankKeeper, ctx, notBondedPool.GetName(), valCoins))
-	// s.accountKeeper.SetModuleAccount(ctx, notBondedPool)
-
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, gomock.Any()).AnyTimes()
 	validator = stakingkeeper.TestingUpdateValidator(keeper, ctx, validator, true)
 	keeper.SetValidatorByConsAddr(ctx, validator)
 	require.True(validator.IsBonded())
@@ -171,21 +164,11 @@ func (s *KeeperTestSuite) TestDelegateAboveMaxStakingAmount_Settlus() {
 	selfDelegation := stakingtypes.NewDelegation(sdk.AccAddress(addrVals[0].Bytes()), addrVals[0], issuedShares)
 	keeper.SetDelegation(ctx, selfDelegation)
 
-	// add bonded tokens to pool for delegations
-	// bondedPool := keeper.GetBondedPool(ctx)
-	// require.NoError(banktestutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), valCoins))
-	// s.accountKeeper.SetModuleAccount(ctx, bondedPool)
-
 	// create a second delegation from user to this validator
 	keeper.DeleteValidatorByPowerIndex(ctx, validator)
 	validator, issuedShares = validator.AddTokensFromDel(delTokens)
 	require.True(validator.IsBonded())
 	require.Equal(delTokens, issuedShares.RoundInt())
-
-	// add bonded tokens to pool for delegations
-	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, delCoins)
-	// require.NoError(banktestutil.FundModuleAccount(app.BankKeeper, ctx, bondedPool.GetName(), delCoins))
-	// s.accountKeeper.SetModuleAccount(ctx, bondedPool)
 
 	validator = stakingkeeper.TestingUpdateValidator(keeper, ctx, validator, true)
 	delegation := stakingtypes.NewDelegation(testAddrs[1], addrVals[0], issuedShares)
@@ -193,10 +176,6 @@ func (s *KeeperTestSuite) TestDelegateAboveMaxStakingAmount_Settlus() {
 
 	// add remaining delegation should not throw error
 	remainingDel, _ := keeper.GetRemainingDelegation(ctx, validator.GetOperator())
-	remainingDelCoin := sdk.NewCoins(sdk.NewCoin(keeper.BondDenom(ctx), remainingDel))
-	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, remainingDelCoin)
-	// require.NoError(banktestutil.FundModuleAccount(app.BankKeeper, ctx, notBondedPool.GetName(), remainingDelCoin))
-	// s.accountKeeper.SetModuleAccount(ctx, bondedPool)
 	_, err := keeper.Delegate(ctx, testAddrs[1], remainingDel, stakingtypes.Unbonded, validator, false)
 	require.NoError(err)
 

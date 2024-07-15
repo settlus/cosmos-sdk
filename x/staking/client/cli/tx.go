@@ -86,7 +86,7 @@ func NewCreateValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(FlagSetCommissionCreate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
 	cmd.Flags().AddFlagSet(FlagSetMaxDelegation())
-	cmd.Flags().AddFlagSet(FlagSetProbono())
+	cmd.Flags().AddFlagSet(FlagSetProbonoRate())
 
 	cmd.Flags().String(FlagIP, "", fmt.Sprintf("The node's public IP. It takes effect only when used in combination with --%s", flags.FlagGenerateOnly))
 	cmd.Flags().String(FlagNodeID, "", "The node's ID")
@@ -459,7 +459,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
 	fsCreateValidator.AddFlagSet(FlagSetMaxDelegation())
-	fsCreateValidator.AddFlagSet(FlagSetProbono())
+	fsCreateValidator.AddFlagSet(FlagSetProbonoRate())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
 
@@ -470,7 +470,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	commission max change rate:  %s
 	minimum self delegation:     %s
 	max delegation:              %s
-	probono: %v
+	probono rate: %v
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
 		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbonoRate)
@@ -565,7 +565,7 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	c.IP = ip
 	c.P2PPort = p2pPort
-	
+
 	c.MaxDelegation, err = flagSet.GetString(FlagMaxDelegation)
 	if err != nil {
 		return c, err
@@ -610,7 +610,7 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 	}
 
 	if c.ProbonoRate == "" {
-		c.MaxDelegation = defaultProbonoRate
+		c.ProbonoRate = defaultProbonoRate
 	}
 
 	return c, nil
