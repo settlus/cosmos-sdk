@@ -24,6 +24,10 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 		return err
 	}
 
+	if err := migrateValidator(store, cdc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -97,4 +101,23 @@ func setUBDToStore(ctx sdk.Context, store storetypes.KVStore, cdc codec.BinaryCo
 	key := types.GetUBDKey(delegatorAddress, addr)
 
 	store.Set(key, bz)
+}
+
+// migrateValidator function will add probono rate based on probono field
+func migrateValidator(store storetypes.KVStore, cdc codec.BinaryCodec) error {
+	iterator := sdk.KVStorePrefixIterator(store, types.ValidatorsKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		v := types.MustUnmarshalValidator(cdc, iterator.Value())
+		if v.Probono {
+			v.ProbonoRate = sdk.OneDec()
+		} else {
+			v.ProbonoRate = sdk.ZeroDec()
+		}
+
+		store.Set(types.ValidatorsKey, cdc.MustMarshal(&v))
+	}	
+	
+	return nil
 }

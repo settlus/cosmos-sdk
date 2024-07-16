@@ -141,8 +141,9 @@ message Validator {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable)   = false
   ];
+  bool probono = 15;
   // probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
-  string probono_rate = 15 [
+  string probono_rate = 16 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable)   = false

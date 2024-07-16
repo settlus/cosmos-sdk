@@ -109,6 +109,14 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	validator.MaxDelegation = msg.MaxDelegation
 	validator.ProbonoRate = msg.ProbonoRate
 
+	// check if the validator is a probono validator by probono rate
+	// TODO: remove boolean Probono field
+	if(msg.ProbonoRate == sdk.ZeroDec()) {
+		validator.Probono = false
+	} else {
+		validator.Probono = true
+	}
+
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
 	k.SetNewValidatorByPowerIndex(ctx, validator)
