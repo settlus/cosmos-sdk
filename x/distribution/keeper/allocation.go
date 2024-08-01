@@ -36,7 +36,6 @@ func (k Keeper) AllocateTokens(
 		return
 	}
 
-	// pay previous proposer
 	remaining := feesCollected
 	communityTax := k.GetCommunityTax(ctx)
 	voteMultiplier := sdk.OneDec().Sub(communityTax)

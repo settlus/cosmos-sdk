@@ -232,16 +232,16 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	val1.Commission = stakingtypes.NewCommission(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk1)).Return(val1).AnyTimes()
 
-	// create third validator with 0% commission
+	// create third validator with 0% commission and max probono rate
 	valAddr2 := sdk.ValAddress(valConsAddr2)
-	val2, err := distrtestutil.CreateProbonoValidator(valConsPk2, math.NewInt(70))
+	val2, err := distrtestutil.CreateProbonoValidator(valConsPk2, math.NewInt(70), sdk.OneDec())
 	require.NoError(t, err)
 	val2.Commission = stakingtypes.NewCommission(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk2)).Return(val2).AnyTimes()
 
-	// create fourth validator with 0% commission
+	// create fourth validator with 0% commission and half probono rate
 	valAddr3 := sdk.ValAddress(valConsAddr3)
-	val3, err := distrtestutil.CreateValidator(valConsPk3, math.NewInt(70))
+	val3, err := distrtestutil.CreateProbonoValidator(valConsPk3, math.NewInt(70), sdk.MustNewDecFromStr("0.5"))
 	require.NoError(t, err)
 	val3.Commission = stakingtypes.NewCommission(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk3)).Return(val3).AnyTimes()
@@ -283,6 +283,7 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	bankKeeper.EXPECT().GetAllBalances(gomock.Any(), feeCollectorAcc.GetAddress()).Return(fees)
 	bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), "fee_collector", disttypes.ModuleName, fees)
 
+	// TODO: revive burner test
 	// fee collector transfers rewards to distribution module, so the module will be the burner
 	// accountKeeper.EXPECT().GetModuleAddress("distribution").Return(distrAcc.GetAddress())
 	// burnerStr, _ := sdk.Bech32ifyAddressBytes(sdk.GetConfig().GetBech32AccountAddrPrefix(), distrKeeper.GetModuleAccount())
@@ -309,11 +310,12 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 
 	maxValidators := sdk.NewInt(int64(stakingKeeper.GetParams(ctx).MaxValidators))
 	voteLength := sdk.NewInt(int64(len(votes)))
-	probonoValidatorLength := sdk.OneDec()
+	probonoValidatorLength := sdk.MustNewDecFromStr("2")
 	votesLengthInDec := sdk.NewDecFromInt(voteLength)
 
 	rewardPerValidator := sdk.NewDecCoinsFromCoins(fees...).QuoDec(sdk.NewDecFromInt(maxValidators))
 	contribution := rewardPerValidator.MulDecTruncate(distrKeeper.GetCommunityTax(ctx))
+
 	rewardAfterContribution := rewardPerValidator.Sub(contribution)
 	contributionPerValidator := rewardPerValidator.Sub(rewardAfterContribution)
 
@@ -325,6 +327,7 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	require.Equal(t, rewardAfterContribution, distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr0).Rewards)
 	require.Equal(t, rewardAfterContribution, distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr1).Rewards)
 	require.Equal(t, sdk.DecCoins(nil), distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr2).Rewards)
+	require.Equal(t, rewardAfterContribution.MulDecTruncate(sdk.MustNewDecFromStr("0.5")), distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr3).Rewards)
 
 	// burning event is the last event, so last index in event slice will be burn event
 	// events := ctx.EventManager().ABCIEvents()
@@ -351,10 +354,11 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	// check max validator param, if max validator number is changed, below numbers also has to be changed
 	require.Equal(t, uint32(100), stakingKeeper.GetParams(ctx).MaxValidators)
 	// check community pool amount through variables
-	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...), distrKeeper.GetFeePool(ctx).CommunityPool)
+	// contribution from non-probono + contribution from full-probono + contributino from half probono
+	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...).Add(contributionPerValidator.Add(rewardAfterContribution.MulDecTruncate(val3.ProbonoRate)...)...), distrKeeper.GetFeePool(ctx).CommunityPool)
 	// given fee is 100, so reward per validator is 1
-	// so exact community pool contribution is 0.6(20% from val1,2,4) + 1(20% + rest 80% probono) = 1.6
-	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(16, 1)}}, distrKeeper.GetFeePool(ctx).CommunityPool)
+	// so exact community pool contribution is 0.4(20% from val1,2) + 1(20% + rest 80% probono) + 0.6 (20% + reset 40% probono from val4) = 2.0
+	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(20, 1)}}, distrKeeper.GetFeePool(ctx).CommunityPool)
 	// 50% commission for first proposer, (0.8 * 50%) * 100 / 2 = 0.4
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(4, 1)}}, distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr0).Commission)
 	// zero commission for second proposer
