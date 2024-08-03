@@ -2332,49 +2332,49 @@ func (x *fastReflection_Description) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_Validator_14_list)(nil)
+var _ protoreflect.List = (*_Validator_15_list)(nil)
 
-type _Validator_14_list struct {
+type _Validator_15_list struct {
 	list *[]uint64
 }
 
-func (x *_Validator_14_list) Len() int {
+func (x *_Validator_15_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_Validator_14_list) Get(i int) protoreflect.Value {
+func (x *_Validator_15_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfUint64((*x.list)[i])
 }
 
-func (x *_Validator_14_list) Set(i int, value protoreflect.Value) {
+func (x *_Validator_15_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_Validator_14_list) Append(value protoreflect.Value) {
+func (x *_Validator_15_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_Validator_14_list) AppendMutable() protoreflect.Value {
+func (x *_Validator_15_list) AppendMutable() protoreflect.Value {
 	panic(fmt.Errorf("AppendMutable can not be called on message Validator at list field UnbondingIds as it is not of Message kind"))
 }
 
-func (x *_Validator_14_list) Truncate(n int) {
+func (x *_Validator_15_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_Validator_14_list) NewElement() protoreflect.Value {
+func (x *_Validator_15_list) NewElement() protoreflect.Value {
 	v := uint64(0)
 	return protoreflect.ValueOfUint64(v)
 }
 
-func (x *_Validator_14_list) IsValid() bool {
+func (x *_Validator_15_list) IsValid() bool {
 	return x.list != nil
 }
 
@@ -2391,10 +2391,10 @@ var (
 	fd_Validator_unbonding_time              protoreflect.FieldDescriptor
 	fd_Validator_commission                  protoreflect.FieldDescriptor
 	fd_Validator_min_self_delegation         protoreflect.FieldDescriptor
-	fd_Validator_unbonding_on_hold_ref_count protoreflect.FieldDescriptor
-	fd_Validator_probono                     protoreflect.FieldDescriptor
-	fd_Validator_unbonding_ids               protoreflect.FieldDescriptor
 	fd_Validator_max_delegation              protoreflect.FieldDescriptor
+	fd_Validator_probono                     protoreflect.FieldDescriptor
+	fd_Validator_unbonding_on_hold_ref_count protoreflect.FieldDescriptor
+	fd_Validator_unbonding_ids               protoreflect.FieldDescriptor
 	fd_Validator_probono_rate                protoreflect.FieldDescriptor
 )
 
@@ -2412,10 +2412,10 @@ func init() {
 	fd_Validator_unbonding_time = md_Validator.Fields().ByName("unbonding_time")
 	fd_Validator_commission = md_Validator.Fields().ByName("commission")
 	fd_Validator_min_self_delegation = md_Validator.Fields().ByName("min_self_delegation")
-	fd_Validator_unbonding_on_hold_ref_count = md_Validator.Fields().ByName("unbonding_on_hold_ref_count")
-	fd_Validator_probono = md_Validator.Fields().ByName("probono")
-	fd_Validator_unbonding_ids = md_Validator.Fields().ByName("unbonding_ids")
 	fd_Validator_max_delegation = md_Validator.Fields().ByName("max_delegation")
+	fd_Validator_probono = md_Validator.Fields().ByName("probono")
+	fd_Validator_unbonding_on_hold_ref_count = md_Validator.Fields().ByName("unbonding_on_hold_ref_count")
+	fd_Validator_unbonding_ids = md_Validator.Fields().ByName("unbonding_ids")
 	fd_Validator_probono_rate = md_Validator.Fields().ByName("probono_rate")
 }
 
@@ -2550,9 +2550,9 @@ func (x *fastReflection_Validator) Range(f func(protoreflect.FieldDescriptor, pr
 			return
 		}
 	}
-	if x.UnbondingOnHoldRefCount != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingOnHoldRefCount)
-		if !f(fd_Validator_unbonding_on_hold_ref_count, value) {
+	if x.MaxDelegation != "" {
+		value := protoreflect.ValueOfString(x.MaxDelegation)
+		if !f(fd_Validator_max_delegation, value) {
 			return
 		}
 	}
@@ -2562,15 +2562,15 @@ func (x *fastReflection_Validator) Range(f func(protoreflect.FieldDescriptor, pr
 			return
 		}
 	}
-	if len(x.UnbondingIds) != 0 {
-		value := protoreflect.ValueOfList(&_Validator_14_list{list: &x.UnbondingIds})
-		if !f(fd_Validator_unbonding_ids, value) {
+	if x.UnbondingOnHoldRefCount != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnbondingOnHoldRefCount)
+		if !f(fd_Validator_unbonding_on_hold_ref_count, value) {
 			return
 		}
 	}
-	if x.MaxDelegation != "" {
-		value := protoreflect.ValueOfString(x.MaxDelegation)
-		if !f(fd_Validator_max_delegation, value) {
+	if len(x.UnbondingIds) != 0 {
+		value := protoreflect.ValueOfList(&_Validator_15_list{list: &x.UnbondingIds})
+		if !f(fd_Validator_unbonding_ids, value) {
 			return
 		}
 	}
@@ -2617,14 +2617,14 @@ func (x *fastReflection_Validator) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Commission != nil
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		return x.MinSelfDelegation != ""
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		return x.UnbondingOnHoldRefCount != int64(0)
-	case "cosmos.staking.v1beta1.Validator.probono":
-		return x.Probono != false
-	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
-		return len(x.UnbondingIds) != 0
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		return x.MaxDelegation != ""
+	case "cosmos.staking.v1beta1.Validator.probono":
+		return x.Probono != false
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		return x.UnbondingOnHoldRefCount != int64(0)
+	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
+		return len(x.UnbondingIds) != 0
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		return x.ProbonoRate != ""
 	default:
@@ -2665,14 +2665,14 @@ func (x *fastReflection_Validator) Clear(fd protoreflect.FieldDescriptor) {
 		x.Commission = nil
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		x.MinSelfDelegation = ""
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		x.UnbondingOnHoldRefCount = int64(0)
-	case "cosmos.staking.v1beta1.Validator.probono":
-		x.Probono = false
-	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
-		x.UnbondingIds = nil
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		x.MaxDelegation = ""
+	case "cosmos.staking.v1beta1.Validator.probono":
+		x.Probono = false
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		x.UnbondingOnHoldRefCount = int64(0)
+	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
+		x.UnbondingIds = nil
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		x.ProbonoRate = ""
 	default:
@@ -2724,21 +2724,21 @@ func (x *fastReflection_Validator) Get(descriptor protoreflect.FieldDescriptor) 
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		value := x.MinSelfDelegation
 		return protoreflect.ValueOfString(value)
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		value := x.UnbondingOnHoldRefCount
-		return protoreflect.ValueOfInt64(value)
-	case "cosmos.staking.v1beta1.Validator.probono":
-		value := x.Probono
-		return protoreflect.ValueOfBool(value)
-	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
-		if len(x.UnbondingIds) == 0 {
-			return protoreflect.ValueOfList(&_Validator_14_list{})
-		}
-		listValue := &_Validator_14_list{list: &x.UnbondingIds}
-		return protoreflect.ValueOfList(listValue)
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		value := x.MaxDelegation
 		return protoreflect.ValueOfString(value)
+	case "cosmos.staking.v1beta1.Validator.probono":
+		value := x.Probono
+		return protoreflect.ValueOfBool(value)
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		value := x.UnbondingOnHoldRefCount
+		return protoreflect.ValueOfInt64(value)
+	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
+		if len(x.UnbondingIds) == 0 {
+			return protoreflect.ValueOfList(&_Validator_15_list{})
+		}
+		listValue := &_Validator_15_list{list: &x.UnbondingIds}
+		return protoreflect.ValueOfList(listValue)
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		value := x.ProbonoRate
 		return protoreflect.ValueOfString(value)
@@ -2784,16 +2784,16 @@ func (x *fastReflection_Validator) Set(fd protoreflect.FieldDescriptor, value pr
 		x.Commission = value.Message().Interface().(*Commission)
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		x.MinSelfDelegation = value.Interface().(string)
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		x.UnbondingOnHoldRefCount = value.Int()
-	case "cosmos.staking.v1beta1.Validator.probono":
-		x.Probono = value.Bool()
-	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
-		lv := value.List()
-		clv := lv.(*_Validator_14_list)
-		x.UnbondingIds = *clv.list
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		x.MaxDelegation = value.Interface().(string)
+	case "cosmos.staking.v1beta1.Validator.probono":
+		x.Probono = value.Bool()
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		x.UnbondingOnHoldRefCount = value.Int()
+	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
+		lv := value.List()
+		clv := lv.(*_Validator_15_list)
+		x.UnbondingIds = *clv.list
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		x.ProbonoRate = value.Interface().(string)
 	default:
@@ -2840,7 +2840,7 @@ func (x *fastReflection_Validator) Mutable(fd protoreflect.FieldDescriptor) prot
 		if x.UnbondingIds == nil {
 			x.UnbondingIds = []uint64{}
 		}
-		value := &_Validator_14_list{list: &x.UnbondingIds}
+		value := &_Validator_15_list{list: &x.UnbondingIds}
 		return protoreflect.ValueOfList(value)
 	case "cosmos.staking.v1beta1.Validator.operator_address":
 		panic(fmt.Errorf("field operator_address of message cosmos.staking.v1beta1.Validator is not mutable"))
@@ -2856,12 +2856,12 @@ func (x *fastReflection_Validator) Mutable(fd protoreflect.FieldDescriptor) prot
 		panic(fmt.Errorf("field unbonding_height of message cosmos.staking.v1beta1.Validator is not mutable"))
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		panic(fmt.Errorf("field min_self_delegation of message cosmos.staking.v1beta1.Validator is not mutable"))
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		panic(fmt.Errorf("field unbonding_on_hold_ref_count of message cosmos.staking.v1beta1.Validator is not mutable"))
-	case "cosmos.staking.v1beta1.Validator.probono":
-		panic(fmt.Errorf("field probono of message cosmos.staking.v1beta1.Validator is not mutable"))
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		panic(fmt.Errorf("field max_delegation of message cosmos.staking.v1beta1.Validator is not mutable"))
+	case "cosmos.staking.v1beta1.Validator.probono":
+		panic(fmt.Errorf("field probono of message cosmos.staking.v1beta1.Validator is not mutable"))
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		panic(fmt.Errorf("field unbonding_on_hold_ref_count of message cosmos.staking.v1beta1.Validator is not mutable"))
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		panic(fmt.Errorf("field probono_rate of message cosmos.staking.v1beta1.Validator is not mutable"))
 	default:
@@ -2903,15 +2903,15 @@ func (x *fastReflection_Validator) NewField(fd protoreflect.FieldDescriptor) pro
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "cosmos.staking.v1beta1.Validator.min_self_delegation":
 		return protoreflect.ValueOfString("")
-	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
-		return protoreflect.ValueOfInt64(int64(0))
-	case "cosmos.staking.v1beta1.Validator.probono":
-		return protoreflect.ValueOfBool(false)
-	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
-		list := []uint64{}
-		return protoreflect.ValueOfList(&_Validator_14_list{list: &list})
 	case "cosmos.staking.v1beta1.Validator.max_delegation":
 		return protoreflect.ValueOfString("")
+	case "cosmos.staking.v1beta1.Validator.probono":
+		return protoreflect.ValueOfBool(false)
+	case "cosmos.staking.v1beta1.Validator.unbonding_on_hold_ref_count":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "cosmos.staking.v1beta1.Validator.unbonding_ids":
+		list := []uint64{}
+		return protoreflect.ValueOfList(&_Validator_15_list{list: &list})
 	case "cosmos.staking.v1beta1.Validator.probono_rate":
 		return protoreflect.ValueOfString("")
 	default:
@@ -3024,11 +3024,15 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.UnbondingOnHoldRefCount != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingOnHoldRefCount))
+		l = len(x.MaxDelegation)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.Probono {
 			n += 2
+		}
+		if x.UnbondingOnHoldRefCount != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnbondingOnHoldRefCount))
 		}
 		if len(x.UnbondingIds) > 0 {
 			l = 0
@@ -3036,10 +3040,6 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 				l += runtime.Sov(uint64(e))
 			}
 			n += 1 + runtime.Sov(uint64(l)) + l
-		}
-		l = len(x.MaxDelegation)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		l = len(x.ProbonoRate)
 		if l > 0 {
@@ -3083,13 +3083,6 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x82
 		}
-		if len(x.MaxDelegation) > 0 {
-			i -= len(x.MaxDelegation)
-			copy(dAtA[i:], x.MaxDelegation)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MaxDelegation)))
-			i--
-			dAtA[i] = 0x7a
-		}
 		if len(x.UnbondingIds) > 0 {
 			var pksize2 int
 			for _, num := range x.UnbondingIds {
@@ -3108,7 +3101,12 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 			}
 			i = runtime.EncodeVarint(dAtA, i, uint64(pksize2))
 			i--
-			dAtA[i] = 0x72
+			dAtA[i] = 0x7a
+		}
+		if x.UnbondingOnHoldRefCount != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingOnHoldRefCount))
+			i--
+			dAtA[i] = 0x70
 		}
 		if x.Probono {
 			i--
@@ -3120,10 +3118,12 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x68
 		}
-		if x.UnbondingOnHoldRefCount != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingOnHoldRefCount))
+		if len(x.MaxDelegation) > 0 {
+			i -= len(x.MaxDelegation)
+			copy(dAtA[i:], x.MaxDelegation)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MaxDelegation)))
 			i--
-			dAtA[i] = 0x60
+			dAtA[i] = 0x62
 		}
 		if len(x.MinSelfDelegation) > 0 {
 			i -= len(x.MinSelfDelegation)
@@ -3609,10 +3609,10 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 				x.MinSelfDelegation = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 12:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingOnHoldRefCount", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxDelegation", wireType)
 				}
-				x.UnbondingOnHoldRefCount = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -3622,11 +3622,24 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingOnHoldRefCount |= int64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MaxDelegation = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 13:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Probono", wireType)
@@ -3648,6 +3661,25 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 				}
 				x.Probono = bool(v != 0)
 			case 14:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingOnHoldRefCount", wireType)
+				}
+				x.UnbondingOnHoldRefCount = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.UnbondingOnHoldRefCount |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 15:
 				if wireType == 0 {
 					var v uint64
 					for shift := uint(0); ; shift += 7 {
@@ -3723,38 +3755,6 @@ func (x *fastReflection_Validator) ProtoMethods() *protoiface.Methods {
 				} else {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingIds", wireType)
 				}
-			case 15:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxDelegation", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.MaxDelegation = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			case 16:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProbonoRate", wireType)
@@ -13245,13 +13245,14 @@ type Validator struct {
 	//
 	// Since: cosmos-sdk 0.46
 	MinSelfDelegation string `protobuf:"bytes,11,opt,name=min_self_delegation,json=minSelfDelegation,proto3" json:"min_self_delegation,omitempty"`
-	// strictly positive if this validator's unbonding has been stopped by external modules
-	UnbondingOnHoldRefCount int64 `protobuf:"varint,12,opt,name=unbonding_on_hold_ref_count,json=unbondingOnHoldRefCount,proto3" json:"unbonding_on_hold_ref_count,omitempty"`
-	Probono                 bool  `protobuf:"varint,13,opt,name=probono,proto3" json:"probono,omitempty"`
-	// list of unbonding ids, each uniquely identifing an unbonding of this validator
-	UnbondingIds []uint64 `protobuf:"varint,14,rep,packed,name=unbonding_ids,json=unbondingIds,proto3" json:"unbonding_ids,omitempty"`
 	// max_delegation represents the total amount of delegation permitted by a validator, inclusive of self-delegation.
-	MaxDelegation string `protobuf:"bytes,15,opt,name=max_delegation,json=maxDelegation,proto3" json:"max_delegation,omitempty"`
+	MaxDelegation string `protobuf:"bytes,12,opt,name=max_delegation,json=maxDelegation,proto3" json:"max_delegation,omitempty"`
+	// probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
+	Probono bool `protobuf:"varint,13,opt,name=probono,proto3" json:"probono,omitempty"`
+	// strictly positive if this validator's unbonding has been stopped by external modules
+	UnbondingOnHoldRefCount int64 `protobuf:"varint,14,opt,name=unbonding_on_hold_ref_count,json=unbondingOnHoldRefCount,proto3" json:"unbonding_on_hold_ref_count,omitempty"`
+	// list of unbonding ids, each uniquely identifing an unbonding of this validator
+	UnbondingIds []uint64 `protobuf:"varint,15,rep,packed,name=unbonding_ids,json=unbondingIds,proto3" json:"unbonding_ids,omitempty"`
 	// probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
 	ProbonoRate string `protobuf:"bytes,16,opt,name=probono_rate,json=probonoRate,proto3" json:"probono_rate,omitempty"`
 }
@@ -13353,11 +13354,11 @@ func (x *Validator) GetMinSelfDelegation() string {
 	return ""
 }
 
-func (x *Validator) GetUnbondingOnHoldRefCount() int64 {
+func (x *Validator) GetMaxDelegation() string {
 	if x != nil {
-		return x.UnbondingOnHoldRefCount
+		return x.MaxDelegation
 	}
-	return 0
+	return ""
 }
 
 func (x *Validator) GetProbono() bool {
@@ -13367,18 +13368,18 @@ func (x *Validator) GetProbono() bool {
 	return false
 }
 
+func (x *Validator) GetUnbondingOnHoldRefCount() int64 {
+	if x != nil {
+		return x.UnbondingOnHoldRefCount
+	}
+	return 0
+}
+
 func (x *Validator) GetUnbondingIds() []uint64 {
 	if x != nil {
 		return x.UnbondingIds
 	}
 	return nil
-}
-
-func (x *Validator) GetMaxDelegation() string {
-	if x != nil {
-		return x.MaxDelegation
-	}
-	return ""
 }
 
 func (x *Validator) GetProbonoRate() string {
@@ -14367,21 +14368,21 @@ var file_cosmos_staking_v1beta1_staking_proto_rawDesc = []byte{
 	0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x49, 0x6e,
 	0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0x52,
 	0x11, 0x6d, 0x69, 0x6e, 0x53, 0x65, 0x6c, 0x66, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x3c, 0x0a, 0x1b, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
-	0x6f, 0x6e, 0x5f, 0x68, 0x6f, 0x6c, 0x64, 0x5f, 0x72, 0x65, 0x66, 0x5f, 0x63, 0x6f, 0x75, 0x6e,
-	0x74, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x03, 0x52, 0x17, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69,
-	0x6e, 0x67, 0x4f, 0x6e, 0x48, 0x6f, 0x6c, 0x64, 0x52, 0x65, 0x66, 0x43, 0x6f, 0x75, 0x6e, 0x74,
-	0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6f, 0x6e, 0x6f, 0x18, 0x0d, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6f, 0x6e, 0x6f, 0x12, 0x23, 0x0a, 0x0d, 0x75, 0x6e,
-	0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x0e, 0x20, 0x03, 0x28,
-	0x04, 0x52, 0x0c, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x49, 0x64, 0x73, 0x12,
-	0x63, 0x0a, 0x0e, 0x6d, 0x61, 0x78, 0x5f, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x42, 0x3c, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
-	0x26, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79,
-	0x70, 0x65, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x49, 0x6e, 0x74, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x5f, 0x0a, 0x0c, 0x70, 0x72, 0x6f, 0x62, 0x6f, 0x6e, 0x6f, 0x5f,
+	0x6f, 0x6e, 0x12, 0x63, 0x0a, 0x0e, 0x6d, 0x61, 0x78, 0x5f, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x42, 0x3c, 0xc8, 0xde, 0x1f, 0x00,
+	0xda, 0xde, 0x1f, 0x26, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b,
+	0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0x52, 0x0d, 0x6d, 0x61, 0x78, 0x44, 0x65, 0x6c,
+	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6f,
+	0x6e, 0x6f, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6f, 0x6e,
+	0x6f, 0x12, 0x3c, 0x0a, 0x1b, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x6f,
+	0x6e, 0x5f, 0x68, 0x6f, 0x6c, 0x64, 0x5f, 0x72, 0x65, 0x66, 0x5f, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x18, 0x0e, 0x20, 0x01, 0x28, 0x03, 0x52, 0x17, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x4f, 0x6e, 0x48, 0x6f, 0x6c, 0x64, 0x52, 0x65, 0x66, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x12,
+	0x23, 0x0a, 0x0d, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x69, 0x64, 0x73,
+	0x18, 0x0f, 0x20, 0x03, 0x28, 0x04, 0x52, 0x0c, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x49, 0x64, 0x73, 0x12, 0x5f, 0x0a, 0x0c, 0x70, 0x72, 0x6f, 0x62, 0x6f, 0x6e, 0x6f, 0x5f,
 	0x72, 0x61, 0x74, 0x65, 0x18, 0x10, 0x20, 0x01, 0x28, 0x09, 0x42, 0x3c, 0xc8, 0xde, 0x1f, 0x00,
 	0xda, 0xde, 0x1f, 0x26, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b,

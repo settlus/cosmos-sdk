@@ -456,6 +456,7 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Description.Equal(other.Description) &&
 		v.Commission.Equal(other.Commission) &&
 		v.Jailed == other.Jailed &&
+		v.Probono == other.Probono &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
 		v.MaxDelegation.Equal(other.MaxDelegation) &&
 		v.ProbonoRate.Equal(other.ProbonoRate) &&
@@ -470,6 +471,7 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool          { return v.Jailed }
+func (v Validator) IsProbono() bool 		{ return v.Probono }
 func (v Validator) GetProbonoRate() sdk.Dec { return v.ProbonoRate }
 func (v Validator) GetMoniker() string      { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus   { return v.Status }

@@ -108,6 +108,12 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 	validator.MaxDelegation = msg.MaxDelegation
 	validator.ProbonoRate = msg.ProbonoRate
+	
+	if validator.ProbonoRate.Equal(sdk.ZeroDec()) {
+		validator.Probono = false
+	} else {
+		validator.Probono = true
+	}
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)

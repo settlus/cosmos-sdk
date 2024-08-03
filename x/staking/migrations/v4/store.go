@@ -24,6 +24,35 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 		return err
 	}
 
+	if err := migrateValidators(store, cdc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// migrateValidators will set the probono rate for existing validators
+func migrateValidators(store storetypes.KVStore, cdc codec.BinaryCodec) error {
+	iterator := sdk.KVStorePrefixIterator(store, types.ValidatorsKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var validator types.Validator
+		err := cdc.Unmarshal(iterator.Value(), &validator)
+		if err != nil {
+			return err
+		}
+
+		if validator.Probono {
+			validator.ProbonoRate = sdk.OneDec()
+		} else {
+			validator.ProbonoRate = sdk.ZeroDec()
+		}
+		bz := types.MustMarshalValidator(cdc, &validator)
+
+		store.Set(types.GetValidatorKey(validator.GetOperator()), bz)
+	}
+
 	return nil
 }
 
