@@ -530,6 +530,14 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 		return err
 	}
 
+	if msg.IsProbono && msg.ProbonoRate.Equal(sdk.ZeroDec()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono validator must have non-zero probono rate")
+	}
+
+	if !msg.IsProbono && msg.ProbonoRate.GT(sdk.ZeroDec()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "non-probono validator must have zero probono rate")
+	}
+
 	return nil
 }
 
