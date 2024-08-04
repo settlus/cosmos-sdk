@@ -136,15 +136,13 @@ message Validator {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
     (gogoproto.nullable)   = false
   ];
-  // probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
-  bool probono = 13;
 
   // strictly positive if this validator's unbonding has been stopped by external modules
   int64 unbonding_on_hold_ref_count = 14;
 
   // list of unbonding ids, each uniquely identifing an unbonding of this validator
   repeated uint64 unbonding_ids = 15;
-  
+
   // probono defines whether the validator is a probono validator or not. if true, the validator reward is donated to community pool
   string probono_rate = 16 [
     (cosmos_proto.scalar)  = "cosmos.Dec",
