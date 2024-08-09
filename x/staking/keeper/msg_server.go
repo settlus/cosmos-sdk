@@ -107,7 +107,7 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
 	validator.MaxDelegation = msg.MaxDelegation
-	validator.ProbonoRate = msg.ProbonoRate
+	validator.Probono = msg.IsProbono
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -527,7 +527,7 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		Pubkey:            req.Pubkey,
 		Value:             req.Value,
 		MaxDelegation:     req.MaxDelegation,
-		ProbonoRate:       req.ProbonoRate,
+		IsProbono:         req.IsProbono,
 	}
 
 	_, err = k.CreateValidator(ctx, &newMsg)

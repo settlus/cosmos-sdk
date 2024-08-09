@@ -60,8 +60,14 @@ func (k Keeper) AllocateTokens(
 	//
 	// Ref: https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
+		var probonoRate sdk.Dec
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
-		probonoRate := validator.GetProbonoRate()
+		// if validator is probono, use commission field as a probono rate
+		if validator.IsProbono() {
+			probonoRate = validator.GetCommission()
+		} else {
+			probonoRate = sdk.ZeroDec()
+		}
 		
 		// TODO: Consider micro-slashing for missing votes.
 		//

@@ -306,7 +306,7 @@ func initTestnetFiles(
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
 			sdk.ZeroInt(),
-			sdk.ZeroDec(),
+			false,
 		)
 		if err != nil {
 			return err

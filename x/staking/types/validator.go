@@ -61,7 +61,7 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		MinSelfDelegation:       math.OneInt(),
 		UnbondingOnHoldRefCount: 0,
 		MaxDelegation:           sdk.ZeroInt(),
-		ProbonoRate:             sdk.ZeroDec(),
+		Probono:                 false,
 	}, nil
 }
 
@@ -458,7 +458,7 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
 		v.MaxDelegation.Equal(other.MaxDelegation) &&
-		v.ProbonoRate.Equal(other.ProbonoRate) &&
+		v.Probono == other.Probono &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 
@@ -470,7 +470,7 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool          { return v.Jailed }
-func (v Validator) GetProbonoRate() sdk.Dec { return v.ProbonoRate }
+func (v Validator) IsProbono() bool 	    { return v.Probono }
 func (v Validator) GetMoniker() string      { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus   { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {

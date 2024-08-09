@@ -23,6 +23,7 @@ type ValidatorI interface {
 	IsBonded() bool                                          // check if has a bonded status
 	IsUnbonded() bool                                        // check if has status unbonded
 	IsUnbonding() bool
+	IsProbono() bool
 	GetOperator() sdk.ValAddress                             // operator address to receive/return validators coins
 	ConsPubKey() (cryptotypes.PubKey, error)                 // validation consensus pubkey (cryptotypes.PubKey)
 	TmConsPublicKey() (tmprotocrypto.PublicKey, error)       // validation consensus pubkey (Tendermint)
@@ -34,7 +35,6 @@ type ValidatorI interface {
 	GetMinSelfDelegation() math.Int                          // validator minimum self delegation
 	GetDelegatorShares() math.LegacyDec                      // total outstanding delegator shares
 	GetMaxDelegation() math.Int                              // maximum of validator's self declared delegations
-	GetProbonoRate() sdk.Dec                                 // probono rate of validator
 	TokensFromShares(sdk.Dec) math.LegacyDec                 // token worth of provided delegator shares
 	TokensFromSharesTruncated(sdk.Dec) math.LegacyDec        // token worth of provided delegator shares, truncated
 	TokensFromSharesRoundUp(sdk.Dec) math.LegacyDec          // token worth of provided delegator shares, rounded up

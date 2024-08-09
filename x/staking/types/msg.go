@@ -39,7 +39,7 @@ var (
 // Delegator address and validator address are the same.
 func NewMsgCreateValidator(
 	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
-	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, probonoRate sdk.Dec,
+	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, isProbono bool,
 ) (*MsgCreateValidator, error) {
 	var pkAny *codectypes.Any
 	if pubKey != nil {
@@ -57,7 +57,7 @@ func NewMsgCreateValidator(
 		Commission:        commission,
 		MinSelfDelegation: minSelfDelegation,
 		MaxDelegation:     maxDelegation,
-		ProbonoRate:       probonoRate,
+		IsProbono:         isProbono,
 	}, nil
 }
 
@@ -138,10 +138,6 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 	}
 
 	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
-		return err
-	}
-
-	if err := ValidateProbonoRate(&msg.ProbonoRate); err != nil {
 		return err
 	}
 
