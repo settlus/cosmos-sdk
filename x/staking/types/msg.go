@@ -141,6 +141,10 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return err
 	}
 
+	if msg.IsProbono && msg.Commission.Rate.Equal(sdk.ZeroDec()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono validator must have non-zero rate in commission")
+	}
+
 	return nil
 }
 
@@ -455,24 +459,6 @@ func ValidateMaxDelegation(maxDelegation *math.Int) error {
 	return nil
 }
 
-func ValidateProbonoRate(probonoRate *sdk.Dec) error {
-	if probonoRate != nil && probonoRate.IsNegative() {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			"probono rate cannot be negative",
-		)
-	}
-
-	if probonoRate != nil && probonoRate.GT(sdk.OneDec()) {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("probono rate must be less than or equal to 1, got %s", probonoRate),
-		)
-	}
-
-	return nil
-}
-
 // Route implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) Route() string { return RouterKey }
 
@@ -522,16 +508,8 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 		return err
 	}
 
-	if err := ValidateProbonoRate(&msg.ProbonoRate); err != nil {
-		return err
-	}
-
-	if msg.IsProbono && msg.ProbonoRate.Equal(sdk.ZeroDec()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono validator must have non-zero probono rate")
-	}
-
-	if !msg.IsProbono && msg.ProbonoRate.GT(sdk.ZeroDec()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "non-probono validator must have zero probono rate")
+	if msg.IsProbono && msg.Commission.Rate.Equal(sdk.ZeroDec()) {
+		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono validator must have non-zero rate in commission")
 	}
 
 	return nil

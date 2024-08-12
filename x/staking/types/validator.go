@@ -469,10 +469,10 @@ func (v *Validator) Equal(v2 *Validator) bool {
 		v.UnbondingTime.Equal(v2.UnbondingTime)
 }
 
-func (v Validator) IsJailed() bool          { return v.Jailed }
-func (v Validator) IsProbono() bool 	    { return v.Probono }
-func (v Validator) GetMoniker() string      { return v.Description.Moniker }
-func (v Validator) GetStatus() BondStatus   { return v.Status }
+func (v Validator) IsJailed() bool        { return v.Jailed }
+func (v Validator) IsProbono() bool       { return v.Probono }
+func (v Validator) GetMoniker() string    { return v.Description.Moniker }
+func (v Validator) GetStatus() BondStatus { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {
 	if v.OperatorAddress == "" {
 		return nil

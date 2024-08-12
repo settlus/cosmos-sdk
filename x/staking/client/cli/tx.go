@@ -30,7 +30,7 @@ var (
 	defaultCommissionMaxChangeRate = "0.01"
 	defaultMinSelfDelegation       = "1"
 	defaultMaxDelegation           = "0"
-	defaultProbonoRate             = "0"
+	defaultProbono                 = false
 )
 
 // NewTxCmd returns a root CLI command handler for all x/staking transaction commands.
@@ -86,7 +86,7 @@ func NewCreateValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(FlagSetCommissionCreate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
 	cmd.Flags().AddFlagSet(FlagSetMaxDelegation())
-	cmd.Flags().AddFlagSet(FlagSetProbonoRate())
+	cmd.Flags().AddFlagSet(FlagSetProbono())
 
 	cmd.Flags().String(FlagIP, "", fmt.Sprintf("The node's public IP. It takes effect only when used in combination with --%s", flags.FlagGenerateOnly))
 	cmd.Flags().String(FlagNodeID, "", "The node's ID")
@@ -413,15 +413,10 @@ func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
-	probonoStr, _ := fs.GetString(FlagProbonoRate)
-
-	probonoRate, err := sdk.NewDecFromStr(probonoStr)
-	if err != nil {
-		return txf, nil, err
-	}
+	probono, _ := fs.GetBool(FlagProbono)
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, probonoRate,
+		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation, maxDelegation, probono,
 	)
 	if err != nil {
 		return txf, nil, err
@@ -459,7 +454,7 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	fsCreateValidator.AddFlagSet(FlagSetCommissionCreate())
 	fsCreateValidator.AddFlagSet(FlagSetMinSelfDelegation())
 	fsCreateValidator.AddFlagSet(FlagSetMaxDelegation())
-	fsCreateValidator.AddFlagSet(FlagSetProbonoRate())
+	fsCreateValidator.AddFlagSet(FlagSetProbono())
 	fsCreateValidator.AddFlagSet(FlagSetAmount())
 	fsCreateValidator.AddFlagSet(FlagSetPublicKey())
 
@@ -470,10 +465,10 @@ func CreateValidatorMsgFlagSet(ipDefault string) (fs *flag.FlagSet, defaultsDesc
 	commission max change rate:  %s
 	minimum self delegation:     %s
 	max delegation:              %s
-	probono rate: %v
+	probono:    %v
 `, defaultAmount, defaultCommissionRate,
 		defaultCommissionMaxRate, defaultCommissionMaxChangeRate,
-		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbonoRate)
+		defaultMinSelfDelegation, defaultMaxDelegation, defaultProbono)
 
 	return fsCreateValidator, defaultsDesc
 }
@@ -490,7 +485,7 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
 	MaxDelegation           string
-	ProbonoRate             string
+	Probono                 bool
 	PubKey                  cryptotypes.PubKey
 
 	IP              string
@@ -571,7 +566,7 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 		return c, err
 	}
 
-	c.ProbonoRate, err = flagSet.GetString(FlagProbonoRate)
+	c.Probono, err = flagSet.GetBool(FlagProbono)
 	if err != nil {
 		return c, err
 	}
@@ -607,10 +602,6 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	if c.MaxDelegation == "" {
 		c.MaxDelegation = defaultMaxDelegation
-	}
-
-	if c.ProbonoRate == "" {
-		c.ProbonoRate = defaultProbonoRate
 	}
 
 	return c, nil
@@ -657,15 +648,8 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "max delegation must be a positive integer or zero")
 	}
 
-	probonoStr := config.ProbonoRate
-
-	probonoRate, err := sdk.NewDecFromStr(probonoStr)
-	if err != nil {
-		return txBldr, nil, err
-	}
-
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, probonoRate,
+		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation, maxDelegation, config.Probono,
 	)
 	if err != nil {
 		return txBldr, msg, err

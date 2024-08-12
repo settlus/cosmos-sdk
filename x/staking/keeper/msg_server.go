@@ -158,6 +158,10 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 	validator.Description = description
 
+	if validator.IsProbono() && msg.CommissionRate != nil {
+		return nil, types.ErrProbonoCommissionChange
+	}
+
 	if msg.CommissionRate != nil {
 		commission, err := k.UpdateValidatorCommission(ctx, validator, *msg.CommissionRate)
 		if err != nil {

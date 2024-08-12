@@ -65,7 +65,7 @@ func TestMsgCreateValidator(t *testing.T) {
 		name, moniker, identity, website, securityContact, details string
 		CommissionRates                                            types.CommissionRates
 		minSelfDelegation                                          sdk.Int
-		maxDeleagtion                                              sdk.Int
+		maxDelegation                                              sdk.Int
 		validatorAddr                                              sdk.ValAddress
 		pubkey                                                     cryptotypes.PubKey
 		bond                                                       sdk.Coin
@@ -82,11 +82,13 @@ func TestMsgCreateValidator(t *testing.T) {
 		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
 		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
 		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
+		{"probono validator but zero commission", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, true, false},
+		{"correct probono validator and commission", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, true, false},
 	}
 
 	for _, tc := range tests {
 		description := types.NewDescription(tc.moniker, tc.identity, tc.website, tc.securityContact, tc.details)
-		msg, err := types.NewMsgCreateValidator(tc.validatorAddr, tc.pubkey, tc.bond, description, tc.CommissionRates, tc.minSelfDelegation, tc.maxDeleagtion, tc.isProbono)
+		msg, err := types.NewMsgCreateValidator(tc.validatorAddr, tc.pubkey, tc.bond, description, tc.CommissionRates, tc.minSelfDelegation, tc.maxDelegation, tc.isProbono)
 		require.NoError(t, err)
 		if tc.expectPass {
 			require.Nil(t, msg.ValidateBasic(), "test: %v", tc.name)

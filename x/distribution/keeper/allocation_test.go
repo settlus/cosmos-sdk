@@ -236,14 +236,12 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	valAddr2 := sdk.ValAddress(valConsAddr2)
 	val2, err := distrtestutil.CreateProbonoValidator(valConsPk2, math.NewInt(70), sdk.OneDec())
 	require.NoError(t, err)
-	val2.Commission = stakingtypes.NewCommission(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk2)).Return(val2).AnyTimes()
 
 	// create fourth validator with 0% commission and half probono rate
 	valAddr3 := sdk.ValAddress(valConsAddr3)
 	val3, err := distrtestutil.CreateProbonoValidator(valConsPk3, math.NewInt(70), sdk.MustNewDecFromStr("0.5"))
 	require.NoError(t, err)
-	val3.Commission = stakingtypes.NewCommission(sdk.NewDec(0), sdk.NewDec(0), sdk.NewDec(0))
 	stakingKeeper.EXPECT().ValidatorByConsAddr(gomock.Any(), sdk.GetConsAddress(valConsPk3)).Return(val3).AnyTimes()
 
 	abciValA := abci.Validator{
@@ -321,13 +319,17 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 
 	bankKeeper.EXPECT().BurnCoins(gomock.Any(), disttypes.ModuleName, gomock.Any())
 	// Total reward in the block = 100, max validator set to 100
-	// power is useless here
+	// power is useless in PoA phase
 	distrKeeper.AllocateTokens(ctx, 4, votes)
 
 	require.Equal(t, rewardAfterContribution, distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr0).Rewards)
 	require.Equal(t, rewardAfterContribution, distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr1).Rewards)
 	require.Equal(t, sdk.DecCoins(nil), distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr2).Rewards)
 	require.Equal(t, rewardAfterContribution.MulDecTruncate(sdk.MustNewDecFromStr("0.5")), distrKeeper.GetValidatorOutstandingRewards(ctx, valAddr3).Rewards)
+
+	// make sure that probono validators have commission rate, but it is used as probono rate
+	require.True(t, distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr2).Commission.IsZero())
+	require.True(t, distrKeeper.GetValidatorAccumulatedCommission(ctx, valAddr3).Commission.IsZero())
 
 	// burning event is the last event, so last index in event slice will be burn event
 	// events := ctx.EventManager().ABCIEvents()
@@ -355,7 +357,7 @@ func TestAllocateTokensToManyValidators_Settlus(t *testing.T) {
 	require.Equal(t, uint32(100), stakingKeeper.GetParams(ctx).MaxValidators)
 	// check community pool amount through variables
 	// contribution from non-probono + contribution from full-probono + contributino from half probono
-	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...).Add(contributionPerValidator.Add(rewardAfterContribution.MulDecTruncate(val3.ProbonoRate)...)...), distrKeeper.GetFeePool(ctx).CommunityPool)
+	require.Equal(t, contributionPerValidator.MulDec(votesLengthInDec.Sub(probonoValidatorLength)).Add(rewardPerValidator...).Add(contributionPerValidator.Add(rewardAfterContribution.MulDecTruncate(val3.Commission.Rate)...)...), distrKeeper.GetFeePool(ctx).CommunityPool)
 	// given fee is 100, so reward per validator is 1
 	// so exact community pool contribution is 0.4(20% from val1,2) + 1(20% + rest 80% probono) + 0.6 (20% + reset 40% probono from val4) = 2.0
 	require.Equal(t, sdk.DecCoins{{Denom: sdk.DefaultBondDenom, Amount: sdk.NewDecWithPrec(20, 1)}}, distrKeeper.GetFeePool(ctx).CommunityPool)
