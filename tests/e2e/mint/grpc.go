@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/testutil"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 
@@ -30,7 +31,7 @@ func (s *E2ETestSuite) TestQueryGRPC() {
 			&minttypes.QueryParamsResponse{},
 			&minttypes.QueryParamsResponse{
 				Params: minttypes.NewParams("stake", sdk.NewDecWithPrec(13, 2), sdk.NewDecWithPrec(100, 2),
-					math.LegacyNewDec(1), sdk.NewDecWithPrec(67, 2), (60 * 60 * 8766 / 5)),
+					sdk.NewDec(1), sdk.NewDecWithPrec(67, 2), (60 * 60 * 8760 / 6), math.NewInt(5000000000000000000)),
 			},
 		},
 		{

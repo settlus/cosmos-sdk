@@ -106,6 +106,8 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	}
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
+	validator.MaxDelegation = msg.MaxDelegation
+	validator.Probono = msg.IsProbono
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -156,6 +158,10 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 
 	validator.Description = description
 
+	if validator.IsProbono() && msg.CommissionRate != nil {
+		return nil, types.ErrProbonoCommissionChange
+	}
+
 	if msg.CommissionRate != nil {
 		commission, err := k.UpdateValidatorCommission(ctx, validator, *msg.CommissionRate)
 		if err != nil {
@@ -182,6 +188,14 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 		validator.MinSelfDelegation = *msg.MinSelfDelegation
 	}
 
+	if msg.MaxDelegation != nil {
+		if !msg.MaxDelegation.LT(validator.Tokens) {
+			return nil, types.ErrMaxDelegationBelowMinimum
+		}
+
+		validator.MaxDelegation = *msg.MaxDelegation
+	}
+
 	k.SetValidator(ctx, validator)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
@@ -189,6 +203,7 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			types.EventTypeEditValidator,
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
+			sdk.NewAttribute(types.AtrributeMaxDelegation, validator.MaxDelegation.String()),
 		),
 	})
 
@@ -490,4 +505,42 @@ func (ms msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdatePara
 	}
 
 	return &types.MsgUpdateParamsResponse{}, nil
+}
+
+func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCreateValidatorByGov) (*types.MsgCreateValidatorByGovResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	// TODO: GetAuthority to k.authority when ibc-go testing module is compatible
+	if k.GetAuthority() != req.Authority {
+		return nil, sdkerrors.Wrapf(govtypes.ErrInvalidSigner, "expected %s got %s", k.GetAuthority(), req.Authority)
+	}
+
+	acc, err := sdk.ValAddressFromBech32(req.ValidatorAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	delAddr := sdk.AccAddress(acc)
+
+	newMsg := types.MsgCreateValidator{
+		Description:       req.Description,
+		Commission:        req.Commission,
+		MinSelfDelegation: req.MinSelfDelegation,
+		DelegatorAddress:  delAddr.String(),
+		ValidatorAddress:  req.ValidatorAddress,
+		Pubkey:            req.Pubkey,
+		Value:             req.Value,
+		MaxDelegation:     req.MaxDelegation,
+		IsProbono:         req.IsProbono,
+	}
+
+	_, err = k.CreateValidator(ctx, &newMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	logger := k.Logger(ctx)
+	logger.Info("Created validator by proposal")
+
+	return &types.MsgCreateValidatorByGovResponse{}, nil
 }

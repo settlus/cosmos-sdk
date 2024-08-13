@@ -28,6 +28,8 @@ type BankKeeper interface {
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 
 	BlockedAddr(addr sdk.AccAddress) bool
+	// add burner permission to distribution module
+	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 }
 
 // StakingKeeper expected staking keeper (noalias)
@@ -49,6 +51,7 @@ type StakingKeeper interface {
 	GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation
 	GetAllValidators(ctx sdk.Context) (validators []stakingtypes.Validator)
 	GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
+	GetParams(ctx sdk.Context) stakingtypes.Params
 }
 
 // StakingHooks event hooks for staking validator object (noalias)

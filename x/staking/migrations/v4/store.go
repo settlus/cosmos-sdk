@@ -24,6 +24,28 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 		return err
 	}
 
+	if err := migrateProbonoValidators(ctx, store, cdc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// migrateProbonoValidators will update the previous version's probono validator commission
+func migrateProbonoValidators(ctx sdk.Context, store storetypes.KVStore, cdc codec.BinaryCodec) error {
+	iterator := sdk.KVStorePrefixIterator(store, types.ValidatorsKey)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		validator := types.MustUnmarshalValidator(cdc, iterator.Value())
+		if validator.Probono {
+			validator.Commission = types.NewCommissionWithTime(sdk.OneDec(), sdk.OneDec(), sdk.ZeroDec(), ctx.BlockTime())
+		}
+
+		bz := types.MustMarshalValidator(cdc, &validator)
+		store.Set(types.GetValidatorKey(validator.GetOperator()), bz)
+	}
+
 	return nil
 }
 

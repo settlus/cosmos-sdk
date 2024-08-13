@@ -27,6 +27,8 @@ const (
 	FlagCommissionMaxChangeRate = "commission-max-change-rate"
 
 	FlagMinSelfDelegation = "min-self-delegation"
+	FlagMaxDelegation     = "max-delegation"
+	FlagProbono           = "probono"
 
 	FlagGenesisFormat = "genesis-format"
 	FlagNodeID        = "node-id"
@@ -64,6 +66,18 @@ func FlagSetCommissionCreate() *flag.FlagSet {
 func FlagSetMinSelfDelegation() *flag.FlagSet {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.String(FlagMinSelfDelegation, "", "The minimum self delegation required on the validator")
+	return fs
+}
+
+func FlagSetMaxDelegation() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.String(FlagMaxDelegation, "", "The maximum delegation on the validator")
+	return fs
+}
+
+func FlagSetProbono() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.Bool(FlagProbono, false, "whether the validator is probono")
 	return fs
 }
 

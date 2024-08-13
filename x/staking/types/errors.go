@@ -52,4 +52,7 @@ var (
 	ErrCommissionLTMinRate             = sdkerrors.Register(ModuleName, 40, "commission cannot be less than min rate")
 	ErrUnbondingNotFound               = sdkerrors.Register(ModuleName, 41, "unbonding operation not found")
 	ErrUnbondingOnHoldRefCountNegative = sdkerrors.Register(ModuleName, 42, "cannot un-hold unbonding operation that is not on hold")
+	ErrMaxStakingAmountReached         = sdkerrors.Register(ModuleName, 43, "cannot delegate more than max staking amount")
+	ErrMaxDelegationBelowMinimum       = sdkerrors.Register(ModuleName, 44, "max delegation cannot be less than minimum delegation")
+	ErrProbonoCommissionChange         = sdkerrors.Register(ModuleName, 45, "probono validator cannot self-edit its commission")
 )

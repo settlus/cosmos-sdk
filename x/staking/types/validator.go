@@ -60,6 +60,8 @@ func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, descriptio
 		Commission:              NewCommission(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec()),
 		MinSelfDelegation:       math.OneInt(),
 		UnbondingOnHoldRefCount: 0,
+		MaxDelegation:           sdk.ZeroInt(),
+		Probono:                 false,
 	}, nil
 }
 
@@ -455,6 +457,8 @@ func (v *Validator) MinEqual(other *Validator) bool {
 		v.Commission.Equal(other.Commission) &&
 		v.Jailed == other.Jailed &&
 		v.MinSelfDelegation.Equal(other.MinSelfDelegation) &&
+		v.MaxDelegation.Equal(other.MaxDelegation) &&
+		v.Probono == other.Probono &&
 		v.ConsensusPubkey.Equal(other.ConsensusPubkey)
 }
 
@@ -466,6 +470,7 @@ func (v *Validator) Equal(v2 *Validator) bool {
 }
 
 func (v Validator) IsJailed() bool        { return v.Jailed }
+func (v Validator) IsProbono() bool       { return v.Probono }
 func (v Validator) GetMoniker() string    { return v.Description.Moniker }
 func (v Validator) GetStatus() BondStatus { return v.Status }
 func (v Validator) GetOperator() sdk.ValAddress {
@@ -519,9 +524,10 @@ func (v Validator) GetBondedTokens() math.Int { return v.BondedTokens() }
 func (v Validator) GetConsensusPower(r math.Int) int64 {
 	return v.ConsensusPower(r)
 }
-func (v Validator) GetCommission() math.LegacyDec      { return v.Commission.Rate }
-func (v Validator) GetMinSelfDelegation() math.Int     { return v.MinSelfDelegation }
-func (v Validator) GetDelegatorShares() math.LegacyDec { return v.DelegatorShares }
+func (v Validator) GetCommission() sdk.Dec         { return v.Commission.Rate }
+func (v Validator) GetMinSelfDelegation() math.Int { return v.MinSelfDelegation }
+func (v Validator) GetMaxDelegation() math.Int     { return v.MaxDelegation }
+func (v Validator) GetDelegatorShares() sdk.Dec    { return v.DelegatorShares }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (v Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {

@@ -80,7 +80,7 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 	privKey := ed25519.GenPrivKey()
 	valPubKey := privKey.PubKey()
 	moniker := "DefaultMoniker"
-	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation string) cli.TxCreateValidatorConfig {
+	mkTxValCfg := func(amount, commission, commissionMax, commissionMaxChange, minSelfDelegation, maxDelegation string, probono bool) cli.TxCreateValidatorConfig {
 		return cli.TxCreateValidatorConfig{
 			IP:                      ip,
 			ChainID:                 chainID,
@@ -93,6 +93,8 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 			CommissionMaxRate:       commissionMax,
 			CommissionMaxChangeRate: commissionMaxChange,
 			MinSelfDelegation:       minSelfDelegation,
+			MaxDelegation:           maxDelegation,
+			Probono:                 probono,
 		}
 	}
 
@@ -104,42 +106,56 @@ func (s *CLITestSuite) TestPrepareConfigForTxCreateValidator() {
 		{
 			name:        "all defaults",
 			fsModify:    func(fs *pflag.FlagSet) {},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1", "0", false),
 		},
 		{
 			name: "Custom amount",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagAmount, "2000stake")
 			},
-			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg("2000stake", "0.1", "0.2", "0.01", "1", "0", false),
 		},
 		{
 			name: "Custom commission rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagCommissionRate, "0.54")
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.54", "0.2", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.54", "0.2", "0.01", "1", "0", false),
 		},
 		{
 			name: "Custom commission max rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagCommissionMaxRate, "0.89")
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.89", "0.01", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.89", "0.01", "1", "0", false),
 		},
 		{
 			name: "Custom commission max change rate",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagCommissionMaxChangeRate, "0.55")
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.55", "1"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.55", "1", "0", false),
 		},
 		{
 			name: "Custom min self delegations",
 			fsModify: func(fs *pflag.FlagSet) {
 				fs.Set(cli.FlagMinSelfDelegation, "0.33")
 			},
-			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "0.33"),
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "0.33", "0", false),
+		},
+		{
+			name: "Custom max delegations",
+			fsModify: func(fs *pflag.FlagSet) {
+				fs.Set(cli.FlagMaxDelegation, "1000")
+			},
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1", "1000", false),
+		},
+		{
+			name: "Custom probono",
+			fsModify: func(fs *pflag.FlagSet) {
+				fs.Set(cli.FlagProbono, "true")
+			},
+			expectedCfg: mkTxValCfg(cli.DefaultTokens.String()+sdk.DefaultBondDenom, "0.1", "0.2", "0.01", "1", "0", true),
 		},
 	}
 
@@ -186,6 +202,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=1.0", cli.FlagCommissionMaxRate),
 				fmt.Sprintf("--%s=0.1", cli.FlagCommissionMaxChangeRate),
 				fmt.Sprintf("--%s=1", cli.FlagMinSelfDelegation),
+				fmt.Sprintf("--%s=0", cli.FlagMaxDelegation),
+				fmt.Sprintf("--%s", cli.FlagProbono),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -205,6 +223,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=1.0", cli.FlagCommissionMaxRate),
 				fmt.Sprintf("--%s=0.1", cli.FlagCommissionMaxChangeRate),
 				fmt.Sprintf("--%s=1", cli.FlagMinSelfDelegation),
+				fmt.Sprintf("--%s=0", cli.FlagMaxDelegation),
+				fmt.Sprintf("--%s", cli.FlagProbono),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -225,6 +245,30 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=1.0", cli.FlagCommissionMaxRate),
 				fmt.Sprintf("--%s=0.1", cli.FlagCommissionMaxChangeRate),
 				fmt.Sprintf("--%s=1", cli.FlagMinSelfDelegation),
+				fmt.Sprintf("--%s=0", cli.FlagMaxDelegation),
+				fmt.Sprintf("--%s=false", cli.FlagProbono),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
+				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(10))).String()),
+			},
+			true, 0, nil,
+		},
+		{
+			"false probono, but valid transaction",
+			[]string{
+				fmt.Sprintf("--%s=%s", cli.FlagPubKey, consPubKeyBz),
+				fmt.Sprintf("--%s=%dstake", cli.FlagAmount, 100),
+				fmt.Sprintf("--%s=AFAF00C4", cli.FlagIdentity),
+				fmt.Sprintf("--%s=https://newvalidator.io", cli.FlagWebsite),
+				fmt.Sprintf("--%s=contact@newvalidator.io", cli.FlagSecurityContact),
+				fmt.Sprintf("--%s='Hey, I am a new validator. Please delegate!'", cli.FlagDetails),
+				fmt.Sprintf("--%s=0.5", cli.FlagCommissionRate),
+				fmt.Sprintf("--%s=1.0", cli.FlagCommissionMaxRate),
+				fmt.Sprintf("--%s=0.1", cli.FlagCommissionMaxChangeRate),
+				fmt.Sprintf("--%s=1", cli.FlagMinSelfDelegation),
+				fmt.Sprintf("--%s=0", cli.FlagMaxDelegation),
+				fmt.Sprintf("--%s=false", cli.FlagProbono),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -246,6 +290,8 @@ func (s *CLITestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=1.0", cli.FlagCommissionMaxRate),
 				fmt.Sprintf("--%s=0.1", cli.FlagCommissionMaxChangeRate),
 				fmt.Sprintf("--%s=1", cli.FlagMinSelfDelegation),
+				fmt.Sprintf("--%s=0", cli.FlagMaxDelegation),
+				fmt.Sprintf("--%s", cli.FlagProbono),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, s.addrs[0]),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),

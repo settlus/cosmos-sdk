@@ -41,8 +41,8 @@ func TestMsgDecode(t *testing.T) {
 
 	// now let's try to serialize the whole message
 
-	commission1 := types.NewCommissionRates(math.LegacyZeroDec(), math.LegacyZeroDec(), math.LegacyZeroDec())
-	msg, err := types.NewMsgCreateValidator(valAddr1, pk1, coinPos, types.Description{}, commission1, math.OneInt())
+	commission1 := types.NewCommissionRates(sdk.ZeroDec(), sdk.ZeroDec(), sdk.ZeroDec())
+	msg, err := types.NewMsgCreateValidator(valAddr1, pk1, coinPos, types.Description{}, commission1, sdk.OneInt(), sdk.ZeroInt(), false)
 	require.NoError(t, err)
 	msgSerialized, err := cdc.MarshalInterface(msg)
 	require.NoError(t, err)
@@ -64,27 +64,31 @@ func TestMsgCreateValidator(t *testing.T) {
 	tests := []struct {
 		name, moniker, identity, website, securityContact, details string
 		CommissionRates                                            types.CommissionRates
-		minSelfDelegation                                          math.Int
+		minSelfDelegation                                          sdk.Int
+		maxDelegation                                              sdk.Int
 		validatorAddr                                              sdk.ValAddress
 		pubkey                                                     cryptotypes.PubKey
 		bond                                                       sdk.Coin
+		isProbono                                                  bool
 		expectPass                                                 bool
 	}{
-		{"basic good", "a", "b", "c", "d", "e", commission1, math.OneInt(), valAddr1, pk1, coinPos, true},
-		{"partial description", "", "", "c", "", "", commission1, math.OneInt(), valAddr1, pk1, coinPos, true},
-		{"empty description", "", "", "", "", "", commission2, math.OneInt(), valAddr1, pk1, coinPos, false},
-		{"empty address", "a", "b", "c", "d", "e", commission2, math.OneInt(), emptyAddr, pk1, coinPos, false},
-		{"empty pubkey", "a", "b", "c", "d", "e", commission1, math.OneInt(), valAddr1, emptyPubkey, coinPos, false},
-		{"empty bond", "a", "b", "c", "d", "e", commission2, math.OneInt(), valAddr1, pk1, coinZero, false},
-		{"nil bond", "a", "b", "c", "d", "e", commission2, math.OneInt(), valAddr1, pk1, sdk.Coin{}, false},
-		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, math.ZeroInt(), valAddr1, pk1, coinPos, false},
-		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), valAddr1, pk1, coinPos, false},
-		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(math.OneInt()), valAddr1, pk1, coinPos, false},
+		{"basic good", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, true},
+		{"partial description", "", "", "c", "", "", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, true},
+		{"empty description", "", "", "", "", "", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
+		{"empty address", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), emptyAddr, pk1, coinPos, false, false},
+		{"empty pubkey", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, emptyPubkey, coinPos, false, false},
+		{"empty bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinZero, false, false},
+		{"nil bond", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, sdk.Coin{}, false, false},
+		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
+		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
+		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(sdk.OneInt()), sdk.ZeroInt(), valAddr1, pk1, coinPos, false, false},
+		{"probono validator but zero commission", "a", "b", "c", "d", "e", commission1, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, true, false},
+		{"correct probono validator and commission", "a", "b", "c", "d", "e", commission2, sdk.OneInt(), sdk.ZeroInt(), valAddr1, pk1, coinPos, true, false},
 	}
 
 	for _, tc := range tests {
 		description := types.NewDescription(tc.moniker, tc.identity, tc.website, tc.securityContact, tc.details)
-		msg, err := types.NewMsgCreateValidator(tc.validatorAddr, tc.pubkey, tc.bond, description, tc.CommissionRates, tc.minSelfDelegation)
+		msg, err := types.NewMsgCreateValidator(tc.validatorAddr, tc.pubkey, tc.bond, description, tc.CommissionRates, tc.minSelfDelegation, tc.maxDelegation, tc.isProbono)
 		require.NoError(t, err)
 		if tc.expectPass {
 			require.Nil(t, msg.ValidateBasic(), "test: %v", tc.name)
@@ -100,20 +104,21 @@ func TestMsgEditValidator(t *testing.T) {
 		name, moniker, identity, website, securityContact, details string
 		validatorAddr                                              sdk.ValAddress
 		expectPass                                                 bool
-		minSelfDelegation                                          math.Int
+		minSelfDelegation                                          sdk.Int
+		maxDelegation                                              sdk.Int
 	}{
-		{"basic good", "a", "b", "c", "d", "e", valAddr1, true, math.OneInt()},
-		{"partial description", "", "", "c", "", "", valAddr1, true, math.OneInt()},
-		{"empty description", "", "", "", "", "", valAddr1, false, math.OneInt()},
-		{"empty address", "a", "b", "c", "d", "e", emptyAddr, false, math.OneInt()},
-		{"nil int", "a", "b", "c", "d", "e", emptyAddr, false, math.Int{}},
+		{"basic good", "a", "b", "c", "d", "e", valAddr1, true, sdk.OneInt(), sdk.ZeroInt()},
+		{"partial description", "", "", "c", "", "", valAddr1, true, sdk.OneInt(), sdk.ZeroInt()},
+		{"empty description", "", "", "", "", "", valAddr1, false, sdk.OneInt(), sdk.ZeroInt()},
+		{"empty address", "a", "b", "c", "d", "e", emptyAddr, false, sdk.OneInt(), sdk.ZeroInt()},
+		{"nil int", "a", "b", "c", "d", "e", emptyAddr, false, sdk.Int{}, sdk.ZeroInt()},
 	}
 
 	for _, tc := range tests {
 		description := types.NewDescription(tc.moniker, tc.identity, tc.website, tc.securityContact, tc.details)
 		newRate := math.LegacyZeroDec()
 
-		msg := types.NewMsgEditValidator(tc.validatorAddr, description, &newRate, &tc.minSelfDelegation)
+		msg := types.NewMsgEditValidator(tc.validatorAddr, description, &newRate, &tc.minSelfDelegation, &tc.maxDelegation)
 		if tc.expectPass {
 			require.Nil(t, msg.ValidateBasic(), "test: %v", tc.name)
 		} else {
