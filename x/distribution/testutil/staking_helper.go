@@ -23,7 +23,9 @@ func CreateProbonoValidator(pk cryptotypes.PubKey, stake math.Int, probonoRate s
 	val, err := stakingtypes.NewValidator(sdk.ValAddress(valConsAddr), pk, stakingtypes.Description{})
 	val.Tokens = stake
 	val.DelegatorShares = math.LegacyNewDecFromInt(val.Tokens)
-	val.ProbonoRate = probonoRate
+	val.Probono = true
+	val.Commission = stakingtypes.NewCommission(probonoRate, probonoRate, sdk.NewDec(0))
+
 	return val, err
 }
 

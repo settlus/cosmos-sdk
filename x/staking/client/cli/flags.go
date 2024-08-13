@@ -28,7 +28,7 @@ const (
 
 	FlagMinSelfDelegation = "min-self-delegation"
 	FlagMaxDelegation     = "max-delegation"
-	FlagProbonoRate       = "probono-rate"
+	FlagProbono           = "probono"
 
 	FlagGenesisFormat = "genesis-format"
 	FlagNodeID        = "node-id"
@@ -75,9 +75,9 @@ func FlagSetMaxDelegation() *flag.FlagSet {
 	return fs
 }
 
-func FlagSetProbonoRate() *flag.FlagSet {
+func FlagSetProbono() *flag.FlagSet {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	fs.String(FlagProbonoRate, "", "probono rate of the validator, between zero and one inclusive")
+	fs.Bool(FlagProbono, false, "whether the validator is probono")
 	return fs
 }
 

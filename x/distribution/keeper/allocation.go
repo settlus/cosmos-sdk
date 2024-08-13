@@ -60,9 +60,14 @@ func (k Keeper) AllocateTokens(
 	//
 	// Ref: https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
+		var probonoRate sdk.Dec
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
-		probonoRate := validator.GetProbonoRate()
-		
+		// if validator is probono, use commission field as a probono rate
+		if validator.IsProbono() {
+			probonoRate = validator.GetCommission()
+		} else {
+			probonoRate = sdk.ZeroDec()
+		}
 		// TODO: Consider micro-slashing for missing votes.
 		//
 		// Ref: https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
@@ -83,7 +88,13 @@ func (k Keeper) AllocateTokens(
 // splitting according to commission.
 func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val stakingtypes.ValidatorI, tokens sdk.DecCoins) {
 	// split tokens between validator and delegators according to commission
-	commission := tokens.MulDec(val.GetCommission())
+	// if the validator is probono, commission will be used as a probono rate, so no commission will be allocated
+	var commission sdk.DecCoins
+	if val.IsProbono() {
+		commission = sdk.NewDecCoins()
+	} else {
+		commission = tokens.MulDec(val.GetCommission())
+	}
 	shared := tokens.Sub(commission)
 
 	// update current commission

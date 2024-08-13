@@ -8,8 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/exported"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	v046types "github.com/cosmos/cosmos-sdk/x/staking/migrations/v4/types"
 )
 
 // MigrateStore performs in-place store migrations from v3 to v4.
@@ -26,31 +24,26 @@ func MigrateStore(ctx sdk.Context, storeKey storetypes.StoreKey, cdc codec.Binar
 		return err
 	}
 
-	if err := migrateValidators(store, cdc); err != nil {
+	if err := migrateProbonoValidators(ctx, store, cdc); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// migrateValidators will set the probono rate for existing validators and remove probono field from validators
-func migrateValidators(store storetypes.KVStore, cdc codec.BinaryCodec) error {
+// migrateProbonoValidators will update the previous version's probono validator commission
+func migrateProbonoValidators(ctx sdk.Context, store storetypes.KVStore, cdc codec.BinaryCodec) error {
 	iterator := sdk.KVStorePrefixIterator(store, types.ValidatorsKey)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var oldValidator v046types.Validator
-		var newValidator types.Validator
-		err := cdc.Unmarshal(iterator.Value(), &oldValidator)
-		if err != nil {
-			return err
+		validator := types.MustUnmarshalValidator(cdc, iterator.Value())
+		if validator.Probono {
+			validator.Commission = types.NewCommissionWithTime(sdk.OneDec(), sdk.OneDec(), sdk.ZeroDec(), ctx.BlockTime())
 		}
 
-		newValidator = ConvertToNewValidator(oldValidator)
-
-		bz := types.MustMarshalValidator(cdc, &newValidator)
-
-		store.Set(types.GetValidatorKey(newValidator.GetOperator()), bz)
+		bz := types.MustMarshalValidator(cdc, &validator)
+		store.Set(types.GetValidatorKey(validator.GetOperator()), bz)
 	}
 
 	return nil

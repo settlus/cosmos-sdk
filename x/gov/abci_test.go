@@ -390,7 +390,7 @@ func createValidators(t *testing.T, stakingMsgSvr stakingtypes.MsgServer, ctx sd
 		valTokens := sdk.TokensFromConsensusPower(powerAmt[i], sdk.DefaultPowerReduction)
 		valCreateMsg, err := stakingtypes.NewMsgCreateValidator(
 			addrs[i], pubkeys[i], sdk.NewCoin(sdk.DefaultBondDenom, valTokens),
-			TestDescription, TestCommissionRates, sdk.OneInt(), sdk.ZeroInt(), sdk.ZeroDec(),
+			TestDescription, TestCommissionRates, sdk.OneInt(), sdk.ZeroInt(), false,
 		)
 		require.NoError(t, err)
 		res, err := stakingMsgSvr.CreateValidator(sdk.WrapSDKContext(ctx), valCreateMsg)

@@ -63,7 +63,7 @@ func TestStakingMsgs(t *testing.T) {
 	// create validator
 	description := types.NewDescription("foo_moniker", "", "", "", "")
 	createValidatorMsg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(addr1), valKey.PubKey(), bondCoin, description, commissionRates, sdk.OneInt(), sdk.ZeroInt(), sdk.ZeroDec(),
+		sdk.ValAddress(addr1), valKey.PubKey(), bondCoin, description, commissionRates, sdk.OneInt(), sdk.ZeroInt(), false,
 	)
 	require.NoError(t, err)
 
