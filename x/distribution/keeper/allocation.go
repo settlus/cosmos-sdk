@@ -64,7 +64,7 @@ func (k Keeper) AllocateTokens(
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
 		// if validator is probono, use commission field as a probono rate
 		if validator.IsProbono() {
-			probonoRate = validator.GetCommission()
+			probonoRate = validator.GetProbonoRate()
 		} else {
 			probonoRate = sdk.ZeroDec()
 		}

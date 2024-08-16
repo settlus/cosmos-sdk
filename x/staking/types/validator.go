@@ -534,3 +534,11 @@ func (v Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 	var pk cryptotypes.PubKey
 	return unpacker.UnpackAny(v.ConsensusPubkey, &pk)
 }
+
+func (v Validator) GetProbonoRate() sdk.Dec {
+	if v.IsProbono() {
+		return v.Commission.Rate
+	}
+
+	return sdk.ZeroDec()
+}
