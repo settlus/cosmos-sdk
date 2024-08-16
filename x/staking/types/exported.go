@@ -24,6 +24,7 @@ type ValidatorI interface {
 	IsUnbonded() bool      // check if has status unbonded
 	IsUnbonding() bool
 	IsProbono() bool
+	GetProbonoRate() sdk.Dec
 	GetOperator() sdk.ValAddress                             // operator address to receive/return validators coins
 	ConsPubKey() (cryptotypes.PubKey, error)                 // validation consensus pubkey (cryptotypes.PubKey)
 	TmConsPublicKey() (tmprotocrypto.PublicKey, error)       // validation consensus pubkey (Tendermint)
