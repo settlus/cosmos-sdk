@@ -77,7 +77,7 @@ func TestMsgCreateValidator(t *testing.T) {
 		{"empty pubkey", "a", "b", "c", "d", "e", commission1, math.OneInt(), valAddr1, emptyPubkey, coinPos, false},
 		{"empty bond", "a", "b", "c", "d", "e", commission2, math.OneInt(), valAddr1, pk1, coinZero, false},
 		{"nil bond", "a", "b", "c", "d", "e", commission2, math.OneInt(), valAddr1, pk1, sdk.Coin{}, false},
-		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, sdk.ZeroInt(), valAddr1, pk1, coinPos, false},
+		{"zero min self delegation", "a", "b", "c", "d", "e", commission1, math.ZeroInt(), valAddr1, pk1, coinPos, false},
 		{"negative min self delegation", "a", "b", "c", "d", "e", commission1, sdk.NewInt(-1), valAddr1, pk1, coinPos, false},
 		{"delegation less than min self delegation", "a", "b", "c", "d", "e", commission1, coinPos.Amount.Add(math.OneInt()), valAddr1, pk1, coinPos, false},
 		{"probono validator but zero commission", "a", "b", "c", "d", "e", commission1, math.OneInt(), valAddr1, pk1, coinPos, false},
@@ -102,7 +102,7 @@ func TestMsgEditValidator(t *testing.T) {
 		name, moniker, identity, website, securityContact, details string
 		validatorAddr                                              sdk.ValAddress
 		expectPass                                                 bool
-		minSelfDelegation                                          sdk.Int
+		minSelfDelegation                                          math.Int
 	}{
 		{"basic good", "a", "b", "c", "d", "e", valAddr1, true, math.OneInt()},
 		{"partial description", "", "", "c", "", "", valAddr1, true, math.OneInt()},
