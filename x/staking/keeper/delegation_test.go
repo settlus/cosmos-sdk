@@ -139,61 +139,6 @@ func (s *KeeperTestSuite) TestDelegation() {
 	require.Equal(0, len(resBonds))
 }
 
-func (s *KeeperTestSuite) TestDelegateAboveMaxStakingAmount_Settlus() {
-	ctx, keeper := s.ctx, s.stakingKeeper
-	require := s.Require()
-
-	testAddrs, addrVals := createValAddrs(3)
-
-	valTokens := keeper.TokensFromConsensusPower(ctx, 50)
-	delTokens := keeper.TokensFromConsensusPower(ctx, 10)
-
-	// create a validator with a self-delegation
-	validator := testutil.NewValidator(s.T(), addrVals[0], PKs[0])
-
-	validator.MinSelfDelegation = delTokens
-	validator.MaxDelegation = keeper.TokensFromConsensusPower(ctx, 1000)
-	validator, issuedShares := validator.AddTokensFromDel(valTokens)
-	require.Equal(valTokens, issuedShares.RoundInt())
-
-	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), stakingtypes.NotBondedPoolName, stakingtypes.BondedPoolName, gomock.Any()).AnyTimes()
-	validator = stakingkeeper.TestingUpdateValidator(keeper, ctx, validator, true)
-	keeper.SetValidatorByConsAddr(ctx, validator)
-	require.True(validator.IsBonded())
-
-	selfDelegation := stakingtypes.NewDelegation(sdk.AccAddress(addrVals[0].Bytes()), addrVals[0], issuedShares)
-	keeper.SetDelegation(ctx, selfDelegation)
-
-	// create a second delegation from user to this validator
-	keeper.DeleteValidatorByPowerIndex(ctx, validator)
-	validator, issuedShares = validator.AddTokensFromDel(delTokens)
-	require.True(validator.IsBonded())
-	require.Equal(delTokens, issuedShares.RoundInt())
-
-	validator = stakingkeeper.TestingUpdateValidator(keeper, ctx, validator, true)
-	delegation := stakingtypes.NewDelegation(testAddrs[1], addrVals[0], issuedShares)
-	keeper.SetDelegation(ctx, delegation)
-
-	// add remaining delegation should not throw error
-	remainingDel, _ := keeper.GetRemainingDelegation(ctx, validator.GetOperator())
-	_, err := keeper.Delegate(ctx, testAddrs[1], remainingDel, stakingtypes.Unbonded, validator, false)
-	require.NoError(err)
-
-	// try to delegate one more SETL than allowed should throw error, because we already reached max staking amount
-	_, err = keeper.Delegate(ctx, testAddrs[1], keeper.TokensFromConsensusPower(ctx, 1), stakingtypes.Unbonded, validator, false)
-	require.Error(stakingtypes.ErrMaxStakingAmountReached, err)
-
-	// end block
-	// one validator is updated, 'validator' is added to base simapp suite
-	s.applyValidatorSetUpdates(ctx, keeper, 1)
-
-	validator, found := keeper.GetValidator(ctx, addrVals[0])
-	require.True(found)
-	require.Equal(keeper.TokensFromConsensusPower(ctx, 1000), validator.Tokens)
-	require.Equal(stakingtypes.Bonded, validator.Status)
-	require.False(validator.Jailed)
-}
-
 // tests Get/Set/Remove UnbondingDelegation
 func (s *KeeperTestSuite) TestUnbondingDelegation() {
 	ctx, keeper := s.ctx, s.stakingKeeper
@@ -292,7 +237,6 @@ func (s *KeeperTestSuite) TestUndelegateSelfDelegationBelowMinSelfDelegation() {
 	validator := testutil.NewValidator(s.T(), addrVals[0], PKs[0])
 
 	validator.MinSelfDelegation = delTokens
-	validator.MaxDelegation = delTokens
 	validator, issuedShares := validator.AddTokensFromDel(delTokens)
 	require.Equal(delTokens, issuedShares.RoundInt())
 

@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"cosmossdk.io/math"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -39,8 +37,7 @@ var (
 // Delegator address and validator address are the same.
 func NewMsgCreateValidator(
 	valAddr sdk.ValAddress, pubKey cryptotypes.PubKey, //nolint:interfacer
-	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation, maxDelegation math.Int, isProbono bool,
-) (*MsgCreateValidator, error) {
+	selfDelegation sdk.Coin, description Description, commission CommissionRates, minSelfDelegation math.Int) (*MsgCreateValidator, error) {
 	var pkAny *codectypes.Any
 	if pubKey != nil {
 		var err error
@@ -56,8 +53,6 @@ func NewMsgCreateValidator(
 		Value:             selfDelegation,
 		Commission:        commission,
 		MinSelfDelegation: minSelfDelegation,
-		MaxDelegation:     maxDelegation,
-		IsProbono:         isProbono,
 	}, nil
 }
 
@@ -137,14 +132,6 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return ErrSelfDelegationBelowMinimum
 	}
 
-	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
-		return err
-	}
-
-	if msg.IsProbono && msg.Commission.Rate.Equal(sdk.ZeroDec()) {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "probono validator must have non-zero rate in commission")
-	}
-
 	return nil
 }
 
@@ -157,13 +144,12 @@ func (msg MsgCreateValidator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) 
 // NewMsgEditValidator creates a new MsgEditValidator instance
 //
 //nolint:interfacer
-func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation, newMaxDelegation *math.Int) *MsgEditValidator {
+func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation *math.Int) *MsgEditValidator {
 	return &MsgEditValidator{
 		Description:       description,
 		CommissionRate:    newRate,
 		ValidatorAddress:  valAddr.String(),
 		MinSelfDelegation: newMinSelfDelegation,
-		MaxDelegation:     newMaxDelegation,
 	}
 }
 
@@ -206,10 +192,6 @@ func (msg MsgEditValidator) ValidateBasic() error {
 		if msg.CommissionRate.GT(math.LegacyOneDec()) || msg.CommissionRate.IsNegative() {
 			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "commission rate must be between 0 and 1 (inclusive)")
 		}
-	}
-
-	if err := ValidateMaxDelegation(msg.MaxDelegation); err != nil {
-		return err
 	}
 
 	return nil
@@ -441,24 +423,6 @@ func (m *MsgUpdateParams) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{addr}
 }
 
-func ValidateMaxDelegation(maxDelegation *math.Int) error {
-	if maxDelegation != nil && maxDelegation.IsNegative() {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			"max delegation must be a positive integer or zero",
-		)
-	}
-
-	if maxDelegation != nil && maxDelegation.IsPositive() && maxDelegation.LT(sdk.DefaultPowerReduction) {
-		return sdkerrors.Wrap(
-			sdkerrors.ErrInvalidRequest,
-			fmt.Sprintf("max delegation must be equal or larger than default power reduction %s", sdk.DefaultPowerReduction),
-		)
-	}
-
-	return nil
-}
-
 // Route implements the sdk.Msg interface.
 func (msg MsgCreateValidatorByGov) Route() string { return RouterKey }
 
@@ -502,10 +466,6 @@ func (msg MsgCreateValidatorByGov) ValidateBasic() error {
 
 	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
 		return ErrSelfDelegationBelowMinimum
-	}
-
-	if err := ValidateMaxDelegation(&msg.MaxDelegation); err != nil {
-		return err
 	}
 
 	if msg.IsProbono && msg.Commission.Rate.Equal(sdk.ZeroDec()) {

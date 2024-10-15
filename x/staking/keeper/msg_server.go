@@ -106,8 +106,6 @@ func (k msgServer) CreateValidator(goCtx context.Context, msg *types.MsgCreateVa
 	}
 
 	validator.MinSelfDelegation = msg.MinSelfDelegation
-	validator.MaxDelegation = msg.MaxDelegation
-	validator.Probono = msg.IsProbono
 
 	k.SetValidator(ctx, validator)
 	k.SetValidatorByConsAddr(ctx, validator)
@@ -188,14 +186,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 		validator.MinSelfDelegation = *msg.MinSelfDelegation
 	}
 
-	if msg.MaxDelegation != nil {
-		if !msg.MaxDelegation.LT(validator.Tokens) {
-			return nil, types.ErrMaxDelegationBelowMinimum
-		}
-
-		validator.MaxDelegation = *msg.MaxDelegation
-	}
-
 	k.SetValidator(ctx, validator)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
@@ -203,7 +193,6 @@ func (k msgServer) EditValidator(goCtx context.Context, msg *types.MsgEditValida
 			types.EventTypeEditValidator,
 			sdk.NewAttribute(types.AttributeKeyCommissionRate, validator.Commission.String()),
 			sdk.NewAttribute(types.AttributeKeyMinSelfDelegation, validator.MinSelfDelegation.String()),
-			sdk.NewAttribute(types.AtrributeMaxDelegation, validator.MaxDelegation.String()),
 		),
 	})
 
@@ -530,13 +519,17 @@ func (k msgServer) CreateValidatorByGov(goCtx context.Context, req *types.MsgCre
 		ValidatorAddress:  req.ValidatorAddress,
 		Pubkey:            req.Pubkey,
 		Value:             req.Value,
-		MaxDelegation:     req.MaxDelegation,
-		IsProbono:         req.IsProbono,
 	}
 
 	_, err = k.CreateValidator(ctx, &newMsg)
 	if err != nil {
 		return nil, err
+	}
+
+	if req.IsProbono {
+		val, _ := k.GetValidator(ctx, acc)
+		val.Probono = true
+		k.SetValidator(ctx, val)
 	}
 
 	logger := k.Logger(ctx)

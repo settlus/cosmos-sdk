@@ -657,18 +657,6 @@ func (k Keeper) Delegate(
 
 	delegatorAddress := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
 
-	// we should check if the added delegation amount makes total bonded token exceeds max allowed delegation amount
-	if validator.MaxDelegation.IsPositive() {
-		remainingDel, err := k.GetRemainingDelegation(ctx, validator.GetOperator())
-		if err != nil {
-			return sdk.ZeroDec(), err
-		}
-
-		if bondAmt.GT(remainingDel) {
-			return sdk.ZeroDec(), types.ErrMaxStakingAmountReached
-		}
-	}
-
 	// if subtractAccount is true then we are
 	// performing a delegation and not a redelegation, thus the source tokens are
 	// all non bonded
@@ -722,16 +710,6 @@ func (k Keeper) Delegate(
 	}
 
 	return newShares, nil
-}
-
-func (k Keeper) GetRemainingDelegation(ctx sdk.Context, valAddr sdk.ValAddress) (math.Int, error) {
-	validator, found := k.GetValidator(ctx, valAddr)
-	if !found {
-		return sdk.ZeroInt(), types.ErrNoValidatorFound
-	}
-	remainingDel := validator.MaxDelegation.Sub(validator.GetBondedTokens())
-
-	return remainingDel, nil
 }
 
 // Unbond unbonds a particular delegation and perform associated store operations.
