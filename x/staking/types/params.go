@@ -33,7 +33,7 @@ const (
 )
 
 // DefaultMinCommissionRate is set to 0%
-var DefaultMinCommissionRate = sdk.ZeroDec()
+var DefaultMinCommissionRate = math.LegacyZeroDec()
 
 // NewParams creates a new Params instance
 func NewParams(unbondingTime time.Duration, maxValidators, maxEntries, historicalEntries uint32, bondDenom string, minCommissionRate sdk.Dec) Params {
@@ -104,6 +104,10 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateMinCommissionRate(p.MinCommissionRate); err != nil {
+		return err
+	}
+
+	if err := validateHistoricalEntries(p.HistoricalEntries); err != nil {
 		return err
 	}
 

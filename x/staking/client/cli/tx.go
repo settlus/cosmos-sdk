@@ -531,7 +531,9 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 
 	c.IP = ip
 	c.P2PPort = p2pPort
-
+	c.Website = website
+	c.SecurityContact = securityContact
+	c.Identity = identity
 	c.NodeID = nodeID
 	c.PubKey = valPubKey
 	c.Website = website

@@ -522,9 +522,9 @@ func (v Validator) GetBondedTokens() math.Int { return v.BondedTokens() }
 func (v Validator) GetConsensusPower(r math.Int) int64 {
 	return v.ConsensusPower(r)
 }
-func (v Validator) GetCommission() sdk.Dec         { return v.Commission.Rate }
-func (v Validator) GetMinSelfDelegation() math.Int { return v.MinSelfDelegation }
-func (v Validator) GetDelegatorShares() sdk.Dec    { return v.DelegatorShares }
+func (v Validator) GetCommission() math.LegacyDec      { return v.Commission.Rate }
+func (v Validator) GetMinSelfDelegation() math.Int     { return v.MinSelfDelegation }
+func (v Validator) GetDelegatorShares() math.LegacyDec { return v.DelegatorShares }
 
 // UnpackInterfaces implements UnpackInterfacesMessage.UnpackInterfaces
 func (v Validator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
