@@ -12,7 +12,7 @@ import (
 )
 
 // NewParams returns Params instance with the given values.
-func NewParams(mintDenom string, inflationRateChange, inflationMax, inflationMin, goalBonded sdk.Dec, blocksPerYear uint64, blockReward math.Int) Params {
+func NewParams(mintDenom string, inflationRateChange, inflationMax, inflationMin, goalBonded sdk.Dec, blocksPerYear uint64) Params {
 	return Params{
 		MintDenom:           mintDenom,
 		InflationRateChange: inflationRateChange,
@@ -20,7 +20,6 @@ func NewParams(mintDenom string, inflationRateChange, inflationMax, inflationMin
 		InflationMin:        inflationMin,
 		GoalBonded:          goalBonded,
 		BlocksPerYear:       blocksPerYear,
-		BlockReward:         blockReward,
 	}
 }
 
@@ -33,7 +32,6 @@ func DefaultParams() Params {
 		InflationMin:        sdk.NewDecWithPrec(7, 2),
 		GoalBonded:          sdk.NewDecWithPrec(67, 2),
 		BlocksPerYear:       uint64(60 * 60 * 8766 / 5), // assuming 5 second block times
-		BlockReward:         math.ZeroInt(),             // 5 SETL per block, 5*10^18 aSETL
 	}
 }
 
@@ -55,9 +53,6 @@ func (p Params) Validate() error {
 		return err
 	}
 	if err := validateBlocksPerYear(p.BlocksPerYear); err != nil {
-		return err
-	}
-	if err := validateBlockReward(p.BlockReward); err != nil {
 		return err
 	}
 	if p.InflationMax.LT(p.InflationMin) {
@@ -176,19 +171,6 @@ func validateBlocksPerYear(i interface{}) error {
 
 	if v == 0 {
 		return fmt.Errorf("blocks per year must be positive: %d", v)
-	}
-
-	return nil
-}
-
-func validateBlockReward(i interface{}) error {
-	v, ok := i.(math.Int)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNegative() {
-		return fmt.Errorf("block reward cannot be negative: %d", v)
 	}
 
 	return nil

@@ -91,7 +91,6 @@ func TestBlockProvision(t *testing.T) {
 func TestSettlusBlockProvision(t *testing.T) {
 	minter := InitialMinter(sdk.NewDecWithPrec(1, 1))
 	params := DefaultParams()
-	params.BlockReward = math.NewInt(5000000000000000000) // 5 SETL
 	params.MintDenom = "asetl"
 
 	secondsPerYear := int64(60 * 60 * 8760)

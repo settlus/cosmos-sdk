@@ -22,6 +22,7 @@ var (
 
 // ConstantReward If true, consensus-engine power is always 1 regardless of the amount of staking tokens
 var ConstantReward = false
+var BlockReward = NewIntFromUint64(5000000000000000000)
 
 // TokensToConsensusPower - convert input tokens to potential consensus-engine power
 func TokensToConsensusPower(tokens Int, powerReduction Int) int64 {

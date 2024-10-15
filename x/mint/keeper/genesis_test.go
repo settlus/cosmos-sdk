@@ -66,7 +66,6 @@ func (s *GenesisTestSuite) TestImportExportGenesis() {
 		sdk.NewDecWithPrec(9, 2),
 		sdk.NewDecWithPrec(69, 2),
 		uint64(60*60*8766/5),
-		math.ZeroInt(),
 	)
 
 	s.keeper.InitGenesis(s.sdkCtx, s.accountKeeper, genesisState)
