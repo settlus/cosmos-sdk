@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"cosmossdk.io/math"
+
 	"cosmossdk.io/simapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"

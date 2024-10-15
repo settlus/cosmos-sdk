@@ -108,7 +108,7 @@ func TestMsgEditValidator(t *testing.T) {
 		{"partial description", "", "", "c", "", "", valAddr1, true, math.OneInt()},
 		{"empty description", "", "", "", "", "", valAddr1, false, math.OneInt()},
 		{"empty address", "a", "b", "c", "d", "e", emptyAddr, false, math.OneInt()},
-		{"nil int", "a", "b", "c", "d", "e", emptyAddr, false, sdk.Int{}},
+		{"nil int", "a", "b", "c", "d", "e", emptyAddr, false, math.Int{}},
 	}
 
 	for _, tc := range tests {

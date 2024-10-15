@@ -147,7 +147,6 @@ func NewEditValidatorCmd() *cobra.Command {
 	cmd.Flags().AddFlagSet(flagSetDescriptionEdit())
 	cmd.Flags().AddFlagSet(flagSetCommissionUpdate())
 	cmd.Flags().AddFlagSet(FlagSetMinSelfDelegation())
-
 	flags.AddTxFlagsToCmd(cmd)
 
 	return cmd

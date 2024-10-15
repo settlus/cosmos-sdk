@@ -53,7 +53,6 @@ func BenchmarkDeepContextStack1(b *testing.B) {
 func BenchmarkDeepContextStack3(b *testing.B) {
 	DoBenchmarkDeepContextStack(b, 3)
 }
-
 func BenchmarkDeepContextStack10(b *testing.B) {
 	DoBenchmarkDeepContextStack(b, 10)
 }

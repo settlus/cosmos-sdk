@@ -25,6 +25,7 @@ func (f *fakeOptions) Get(key string) interface{} {
 	if key == "streamers.file.write_dir" {
 		return "data/file_streamer"
 	}
+
 	return nil
 }
 
