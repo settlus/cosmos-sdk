@@ -456,7 +456,8 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxRate       string
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
-	PubKey                  cryptotypes.PubKey
+
+	PubKey cryptotypes.PubKey
 
 	IP              string
 	P2PPort         uint
